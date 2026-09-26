@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The macOS head. Targets plain net10.0 rather than net10.0-macos: everything native it needs is
+    reached by P/Invoke from a handful of adapters, and a platform target framework would buy an
+    AppKit binding surface this application never touches at the cost of a workload install.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- Avalonia reads this as "start without a console window"; it is not Windows-only. -->
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>SessionFinder.Mac</RootNamespace>
+    <AssemblyName>ClaudeSessionFinder</AssemblyName>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationManifest />
+  </PropertyGroup>
+
+  <!--
+    Published into a .app bundle rather than a single file: the bundle is already the one thing a
+    user drags, and single-file extraction would only add a first-run pause in front of the hotkey.
+  -->
+  <PropertyGroup>
+    <RuntimeIdentifier>osx-arm64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <!--
+    Every build, not only the packaged one, lands inside a .app bundle, so that running from the IDE
+    or with dotnet run is running the real thing. Outside a bundle, macOS never reads Info.plist —
+    no LSUIElement, so a Dock icon appears — and there is no bundle for the launch agent to open, so
+    "Start at login" cannot be switched on. The executable goes where a bundle keeps it, and the
+    target below puts Info.plist and the icon where a bundle keeps those.
+  -->
+  <PropertyGroup>
+    <AppBundleDirectory>$(MSBuildProjectDirectory)/bin/$(Configuration)/ClaudeSessionFinder.app/</AppBundleDirectory>
+    <OutDir>$(AppBundleDirectory)Contents/MacOS/</OutDir>
+  </PropertyGroup>
+
+  <Target Name="AssembleAppBundle" AfterTargets="Build">
+    <Copy SourceFiles="Info.plist" DestinationFolder="$(AppBundleDirectory)Contents/" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="Assets/app.icns" DestinationFolder="$(AppBundleDirectory)Contents/Resources/" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!--
+    The menu-bar icon is embedded rather than copied beside the executable: inside a .app bundle the
+    executable's neighbours are not where resources live, and a resource stream works either way.
+    app.icns is not embedded — the build script puts it in the bundle, which is the only place the
+    window server reads an application icon from.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\tray.png" LogicalName="SessionFinder.Mac.Assets.tray.png" />
+    <None Include="Assets\app.icns" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SessionFinder.Core\SessionFinder.Core.csproj" />
+    <ProjectReference Include="..\SessionFinder.Infrastructure\SessionFinder.Infrastructure.csproj" />
+    <ProjectReference Include="..\SessionFinder.Presentation\SessionFinder.Presentation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="NReco.Logging.File" />
+  </ItemGroup>
+
+</Project>

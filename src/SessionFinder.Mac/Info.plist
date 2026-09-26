@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key>
+  <string>ClaudeSessionFinder</string>
+  <key>CFBundleDisplayName</key>
+  <string>Claude Session Finder</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.gtama.claudesessionfinder</string>
+  <key>CFBundleExecutable</key>
+  <string>ClaudeSessionFinder</string>
+  <key>CFBundleIconFile</key>
+  <string>app.icns</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0.0</string>
+  <key>CFBundleVersion</key>
+  <string>1.0.0</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+  <key>LSMinimumSystemVersion</key>
+  <string>12.0</string>
+
+  <!--
+    A menu-bar application: no Dock icon, no entry in the application switcher, and no menu bar of
+    its own. This is the property that makes the launcher behave like one rather than like a window
+    the user has to keep finding. It is also why the launch agent opens the bundle rather than the
+    executable inside it: started directly, the process is not a bundled application as far as the
+    window server is concerned and this is never read.
+  -->
+  <key>LSUIElement</key>
+  <true/>
+</dict>
+</plist>

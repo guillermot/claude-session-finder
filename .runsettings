@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default filter for the whole solution.
+
+  Benchmarks stay in the suite and stay runnable, but they do not gate it: they assert on wall
+  clock times, which say as much about what else the machine is doing as about the code. A test
+  that fails because a build was running beside it teaches nothing.
+
+  A filter given on the command line is combined with the one below rather than replacing it, so
+  running a benchmark means switching this file off for that run. Pass the MSBuild property
+  RunSettingsFilePath as an empty value, together with the test filter "Category=Benchmark".
+-->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category!=Benchmark</TestCaseFilter>
+  </RunConfiguration>
+</RunSettings>

@@ -1,0 +1,99 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Windows head and composition root.
+
+    EnableDefaultApplicationDefinition is off so that App.xaml is compiled as a Page. The
+    ApplicationDefinition build action generates its own entry point, which cannot coexist with the
+    explicit Program.Main the generic host needs in order to be started before the message loop and
+    stopped after it.
+
+    UseWindowsForms is on for exactly one type, NotifyIcon: WPF has no notification-area icon of its
+    own, and the alternative is Shell_NotifyIcon by hand.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>SessionFinder.Wpf</RootNamespace>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+    <StartupObject>SessionFinder.Wpf.Program</StartupObject>
+    <ApplicationManifest>app.manifest.xml</ApplicationManifest>
+    <!--
+      Lets the whole solution build on a Mac next to the macOS head. It only compiles against the
+      Windows reference assemblies; running this head still needs Windows.
+    -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AssemblyName>ClaudeSessionFinder</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <!--
+      WFO0003 tells a Windows Forms application to declare its DPI awareness through
+      ApplicationHighDpiMode instead of in the manifest. This is a WPF application that borrows one
+      Windows Forms type, and WPF reads its DPI awareness from the manifest before the first window
+      exists; the runtime call the analyzer suggests happens far too late to affect it.
+    -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    The Windows Forms SDK adds System.Windows.Forms and System.Drawing to the implicit usings. In a
+    project that is also UseWPF that global import collides with the WPF type of the same name in
+    every file that touches the UI: Application, KeyEventArgs, MessageBox, Clipboard, Cursor, Color,
+    Point and Size are all declared in both. WPF, by contrast, adds no implicit usings at all, so
+    every window in this project already imports System.Windows by hand.
+
+    Removing the two namespaces restores that symmetry rather than papering over each collision:
+    unqualified names mean WPF, and the one Windows Forms type this head borrows is reached through
+    the WinForms alias at the two places that borrow it. Implicit usings stay on everywhere else.
+  -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <!--
+    The same .ico twice, for the two places an icon is read from.
+
+    ApplicationIcon puts it into the Win32 resources of the executable, which is what Explorer, the
+    taskbar and Alt+Tab draw. The notification area draws whatever handle the application hands it,
+    and this application ships as one self-contained file, so the bytes it hands over have to come
+    from inside the assembly rather than from a path beside it: under single-file publishing there
+    is nothing beside it.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\app.ico" LogicalName="SessionFinder.Wpf.Assets.app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SessionFinder.Core\SessionFinder.Core.csproj" />
+    <ProjectReference Include="..\SessionFinder.Infrastructure\SessionFinder.Infrastructure.csproj" />
+    <ProjectReference Include="..\SessionFinder.Presentation\SessionFinder.Presentation.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="NReco.Logging.File" />
+  </ItemGroup>
+
+  <!--
+    Release publishing. Self-contained and single-file because the audience for this is one person
+    on one machine who should not have to install a runtime, and ready-to-run because a launcher is
+    judged on the time between the chord and the caret.
+
+    Trimming is deliberately off. SQLitePCLraw resolves its native provider through reflection and
+    WPF's XAML loading is reflection over types the trimmer cannot see, so a trimmed build is a
+    build that fails at the first window rather than at compile time.
+  -->
+  <PropertyGroup>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+</Project>

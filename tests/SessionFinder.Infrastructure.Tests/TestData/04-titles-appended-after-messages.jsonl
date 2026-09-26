@@ -1,0 +1,6 @@
+{"parentUuid":null,"isSidechain":false,"type":"user","message":{"role":"user","content":"trace the settlement mismatch"},"uuid":"u1","timestamp":"2026-03-01T10:00:00.000Z","userType":"external","cwd":"C:\\work\\project","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","version":"2.0.0","gitBranch":"main"}
+{"parentUuid":"u1","isSidechain":false,"message":{"id":"msg_a1","role":"assistant","model":"test-model","content":[{"type":"text","text":"Tracing the settlement mismatch."}]},"requestId":"req_a1","type":"assistant","uuid":"a1","timestamp":"2026-03-01T10:00:05.000Z","userType":"external","cwd":"C:\\work\\project","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","version":"2.0.0","gitBranch":"main"}
+{"type":"last-prompt","lastPrompt":"trace the settlement mismatch","leafUuid":"a1","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"}
+{"type":"ai-title","aiTitle":"Settlement mismatch trace","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"}
+{"type":"custom-title","customTitle":"Settlement","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"}
+{"type":"custom-title","customTitle":"Settlement mismatch, week 9","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"}

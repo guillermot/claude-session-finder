@@ -1,0 +1,204 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SessionFinder.Mac.App"
+             Name="Claude Session Finder"
+             RequestedThemeVariant="Dark">
+
+  <!--
+    No MainWindow: the window is created by the composition root and shown by the shell, because a
+    launcher that is hidden most of the time must not put a window on screen when it starts.
+
+    The palette is the Windows head's, value for value. The two builds are the same application and
+    a user moving between them should not have to notice which one they are looking at.
+  -->
+  <Application.Resources>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FF1E1F22" />
+    <SolidColorBrush x:Key="SurfaceEdgeBrush" Color="#FF3A3D42" />
+    <SolidColorBrush x:Key="FieldSurfaceBrush" Color="#FF17181A" />
+    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFECEDEE" />
+    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#FF9BA1A8" />
+    <SolidColorBrush x:Key="AccentTextBrush" Color="#FF7FB2F0" />
+    <SolidColorBrush x:Key="SelectionBrush" Color="#FF2D4F7C" />
+    <SolidColorBrush x:Key="HoverBrush" Color="#FF26282C" />
+    <SolidColorBrush x:Key="ErrorTextBrush" Color="#FFE0796C" />
+    <SolidColorBrush x:Key="WarningTextBrush" Color="#FFE0A96C" />
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+
+    <!-- The search field. Large, chromeless, and its own prompt: Avalonia's placeholder follows the
+         box's own text rather than the view model's debounced query, which is exactly the
+         behaviour the Windows head has to build a sibling text block to get. -->
+    <Style Selector="TextBox.query">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="CaretBrush" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="SelectionBrush" Value="{StaticResource SelectionBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="FontSize" Value="22" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox.query /template/ TextBlock#PART_Placeholder">
+      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+    </Style>
+    <Style Selector="TextBox.query:focus /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="TextBox.query:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!-- A result row. The selection is a rounded fill rather than the theme's accent bar, which is
+         the shape the Windows head draws and the one that reads as a list of cards. -->
+    <Style Selector="ListBox.results > ListBoxItem">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Margin" Value="0,1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="ListBox.results > ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource SelectionBrush}" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="ListBox.results > ListBoxItem:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource HoverBrush}" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="ListBox.results > ListBoxItem:selected:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource SelectionBrush}" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+
+    <!--
+      The overlay scroll bar, drawn the way Spotlight draws its own: no arrows and no track at rest,
+      only a thin rounded pill laid over the right edge of the rows. Under the pointer the pill
+      widens and brightens and a faint track appears behind it, which is what the macOS overlay
+      scroller does. The pill is always drawn rather than faded out when idle, because a launcher
+      is on screen for two seconds at a time and has to say there is more below the fold at once.
+
+      The halves of the track either side of the pill stay in the template as transparent buttons:
+      they are what turns a click on the track into a page up or a page down.
+    -->
+    <Style Selector="ListBox.results ScrollBar:vertical, ScrollViewer.overlay ScrollBar:vertical">
+      <Setter Property="Width" Value="12" />
+      <Setter Property="MinWidth" Value="12" />
+      <Setter Property="Margin" Value="0,4,2,4" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Name="PillTrack" Background="Transparent" CornerRadius="6">
+            <Border.Transitions>
+              <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+              </Transitions>
+            </Border.Transitions>
+            <Track Minimum="{TemplateBinding Minimum}"
+                   Maximum="{TemplateBinding Maximum}"
+                   Value="{TemplateBinding Value, Mode=TwoWay}"
+                   ViewportSize="{TemplateBinding ViewportSize}"
+                   Orientation="{TemplateBinding Orientation}"
+                   IsDirectionReversed="True">
+              <Track.DecreaseButton>
+                <RepeatButton Name="PART_PageUpButton" Classes="pill-page" Focusable="False" />
+              </Track.DecreaseButton>
+              <Track.IncreaseButton>
+                <RepeatButton Name="PART_PageDownButton" Classes="pill-page" Focusable="False" />
+              </Track.IncreaseButton>
+              <Thumb Name="Pill" />
+            </Track>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="ScrollBar /template/ RepeatButton.pill-page">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="Transparent" />
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="ScrollBar /template/ Thumb#Pill">
+      <Setter Property="Width" Value="6" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Background" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="Opacity" Value="0.3" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}" />
+        </ControlTemplate>
+      </Setter>
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Width" Duration="0:0:0.15" />
+          <DoubleTransition Property="Opacity" Duration="0:0:0.15" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="ScrollBar:pointerover /template/ Border#PillTrack">
+      <Setter Property="Background" Value="#14FFFFFF" />
+    </Style>
+    <Style Selector="ScrollBar:pointerover /template/ Thumb#Pill">
+      <Setter Property="Width" Value="8" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Opacity" Value="0.5" />
+    </Style>
+    <Style Selector="ScrollBar /template/ Thumb#Pill:pressed">
+      <Setter Property="Opacity" Value="0.7" />
+    </Style>
+
+    <!-- Settings form typography. -->
+    <Style Selector="TextBlock.section">
+      <Setter Property="Foreground" Value="{StaticResource AccentTextBrush}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Margin" Value="0,22,0,2" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Margin" Value="0,12,0,4" />
+    </Style>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="Margin" Value="0,4,0,0" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBox.setting">
+      <Setter Property="Background" Value="{StaticResource FieldSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="CaretBrush" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource SurfaceEdgeBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Padding" Value="8,6" />
+    </Style>
+    <Style Selector="TextBox.setting:focus /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="{StaticResource AccentTextBrush}" />
+      <Setter Property="Background" Value="{StaticResource FieldSurfaceBrush}" />
+    </Style>
+    <Style Selector="TextBox.setting:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{StaticResource FieldSurfaceBrush}" />
+    </Style>
+    <!-- A read-only field is a label that can be copied, so it is drawn as one. -->
+    <Style Selector="TextBox.setting[IsReadOnly=True]">
+      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+
+    <Style Selector="CheckBox.setting">
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Margin" Value="0,10,0,0" />
+    </Style>
+
+  </Application.Styles>
+
+</Application>

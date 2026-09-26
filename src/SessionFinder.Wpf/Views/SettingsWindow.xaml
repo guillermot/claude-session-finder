@@ -1,0 +1,164 @@
+<Window x:Class="SessionFinder.Wpf.Views.SettingsWindow"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Claude Session Finder — Settings"
+        Width="620"
+        Height="720"
+        MinWidth="460"
+        MinHeight="420"
+        ResizeMode="CanResize"
+        ShowInTaskbar="True"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource SurfaceBrush}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display">
+
+  <!--
+    The form takes the application's styles by declaring them implicitly here rather than naming one
+    on every control: the window has fourteen text boxes and three tick boxes, and a style referenced
+    seventeen times is a style that will eventually be forgotten on the eighteenth.
+  -->
+  <Window.Resources>
+    <Style TargetType="TextBlock" x:Key="FieldLabel">
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Margin" Value="0,12,0,4" />
+    </Style>
+    <Style TargetType="TextBlock" x:Key="FieldHint">
+      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="Margin" Value="0,4,0,0" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style TargetType="TextBlock" x:Key="SectionHeading">
+      <Setter Property="Foreground" Value="{StaticResource AccentTextBrush}" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Margin" Value="0,22,0,2" />
+    </Style>
+    <Style TargetType="TextBox" BasedOn="{StaticResource SettingsTextBoxStyle}" />
+    <Style TargetType="CheckBox" BasedOn="{StaticResource SettingsCheckBoxStyle}" />
+  </Window.Resources>
+
+  <Grid Margin="16,16,16,14">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <!--
+      The scrolling part of the form sits inside a frame of its own so that the section headings
+      have something to be sections of, and so that the overlay scroll bar has an edge to run along
+      instead of floating over the window.
+    -->
+    <Border Grid.Row="0"
+            BorderBrush="{StaticResource SurfaceEdgeBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+      <!--
+        The scroll bar is the one the results list uses, laid over the content instead of beside it.
+        It is named here rather than made implicit for the window, because an implicit scroll viewer
+        style also reaches the one inside every text box's own template, where an overlay bar with
+        no horizontal scrolling would stop a long path from scrolling under the caret.
+      -->
+      <ScrollViewer Style="{StaticResource OverlayScrollViewerStyle}"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled"
+                    Padding="18,4,18,18">
+        <StackPanel>
+
+          <TextBlock Style="{StaticResource SectionHeading}" Text="Shell" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Hotkey" />
+          <TextBox Text="{Binding Hotkey, UpdateSourceTrigger=PropertyChanged}" />
+          <TextBlock Style="{StaticResource FieldHint}">
+            <Run Text="Written as Ctrl+Alt+Space. Currently registered:" />
+            <Run Text="{Binding RegisteredChord, Mode=OneWay}" Foreground="{StaticResource AccentTextBrush}" />
+            <Run Text="— a chord another application already owns makes the launcher fall forward to the next candidate." />
+          </TextBlock>
+
+          <CheckBox IsChecked="{Binding StartAtLogin}" Content="Start at login" />
+          <CheckBox IsChecked="{Binding HideOnDeactivate}" Content="Hide the search box when it loses focus" />
+          <CheckBox IsChecked="{Binding VerboseLogging}" Content="Verbose logging (Debug level)" />
+
+          <TextBlock Style="{StaticResource SectionHeading}" Text="Programs" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Editor executable" />
+          <TextBox Text="{Binding EditorPath, UpdateSourceTrigger=LostFocus}" />
+          <TextBlock Style="{StaticResource FieldHint}"
+                     Text="Leave blank to search the usual Visual Studio Code locations." />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Terminal executable" />
+          <TextBox Text="{Binding TerminalPath, UpdateSourceTrigger=LostFocus}" />
+          <TextBlock Style="{StaticResource FieldHint}"
+                     Text="Leave blank to prefer Windows Terminal and fall back to the command shell. The resume command line is built from whichever is used." />
+
+          <TextBlock Style="{StaticResource SectionHeading}" Text="Ranking" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Maximum results" />
+          <TextBox Text="{Binding MaxResults, UpdateSourceTrigger=LostFocus}" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Recency weight" />
+          <TextBox Text="{Binding RecencyWeight, UpdateSourceTrigger=LostFocus}" />
+          <TextBlock Style="{StaticResource FieldHint}"
+                     Text="How much a session touched today outscores an equally relevant old one. 0.6 means 1.6 times." />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Recency half-life (days)" />
+          <TextBox Text="{Binding RecencyHalfLifeDays, UpdateSourceTrigger=LostFocus}" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Title weight" />
+          <TextBox Text="{Binding TitleWeight, UpdateSourceTrigger=LostFocus}" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Folder weight" />
+          <TextBox Text="{Binding FolderWeight, UpdateSourceTrigger=LostFocus}" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Resume prompt weight" />
+          <TextBox Text="{Binding LastPromptWeight, UpdateSourceTrigger=LostFocus}" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="User prompt weight" />
+          <TextBox Text="{Binding UserPromptWeight, UpdateSourceTrigger=LostFocus}" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Assistant text weight" />
+          <TextBox Text="{Binding AssistantTextWeight, UpdateSourceTrigger=LostFocus}" />
+
+          <TextBlock Style="{StaticResource SectionHeading}" Text="Locations" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Settings file" />
+          <TextBox Text="{Binding SettingsFilePath, Mode=OneWay}" IsReadOnly="True" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Index" />
+          <TextBox Text="{Binding IndexFilePath, Mode=OneWay}" IsReadOnly="True" />
+          <TextBlock Style="{StaticResource FieldHint}" Text="{Binding IndexPathNotice, Mode=OneWay}" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Logs" />
+          <TextBox Text="{Binding LogFolderPath, Mode=OneWay}" IsReadOnly="True" />
+
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <TextBlock Grid.Row="1"
+               Margin="2,12,2,0"
+               Foreground="{StaticResource ErrorTextBrush}"
+               FontSize="11"
+               TextWrapping="Wrap"
+               Text="{Binding ValidationMessage}"
+               Visibility="{Binding ValidationMessage, Converter={StaticResource NullToCollapsed}}" />
+
+    <StackPanel Grid.Row="2"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Margin="0,14,0,0">
+      <Button Content="Close"
+              IsCancel="True"
+              Style="{StaticResource SecondaryButtonStyle}"
+              Click="OnCloseClicked" />
+      <Button Content="Save"
+              IsDefault="True"
+              Style="{StaticResource PrimaryButtonStyle}"
+              Command="{Binding SaveCommand}" />
+    </StackPanel>
+
+  </Grid>
+</Window>

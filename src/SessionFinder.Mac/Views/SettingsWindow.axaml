@@ -1,0 +1,129 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:settings="clr-namespace:SessionFinder.Presentation.Settings;assembly=SessionFinder.Presentation"
+        x:Class="SessionFinder.Mac.Views.SettingsWindow"
+        x:ClassModifier="internal"
+        x:DataType="settings:SettingsViewModel"
+        Title="Claude Session Finder — Settings"
+        Width="620"
+        Height="720"
+        MinWidth="460"
+        MinHeight="420"
+        CanResize="True"
+        ShowInTaskbar="True"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource SurfaceBrush}"
+        UseLayoutRounding="True"
+        FontFamily="avares://Avalonia.Fonts.Inter/Assets#Inter">
+
+  <!--
+    An ordinary decorated window, unlike the search box. There is no counterpart here to the Windows
+    head's dark title bar call: macOS paints the title bar from the application's own theme variant,
+    which is already dark, so the thing that needed a P/Invoke there needs nothing here.
+  -->
+  <Grid Margin="16,16,16,14" RowDefinitions="*,Auto,Auto">
+
+    <Border Grid.Row="0"
+            BorderBrush="{StaticResource SurfaceEdgeBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+      <ScrollViewer Classes="overlay"
+                    AllowAutoHide="True"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled"
+                    Padding="18,4,18,18">
+        <StackPanel>
+
+          <TextBlock Classes="section" Text="Shell" />
+
+          <TextBlock Classes="label" Text="Hotkey" />
+          <TextBox Classes="setting" Text="{Binding Hotkey}" />
+          <TextBlock Classes="hint">
+            <Run Text="Written as Option+Space; Cmd, Ctrl and Shift combine the same way. Currently registered:" />
+            <Run Text="{Binding RegisteredChord, Mode=OneWay}"
+                 Foreground="{StaticResource AccentTextBrush}" />
+            <Run Text="— a chord another application already owns makes the launcher fall forward to the next candidate. A chord macOS itself owns, such as ⌘Space, registers without ever arriving." />
+          </TextBlock>
+
+          <CheckBox Classes="setting" IsChecked="{Binding StartAtLogin}" Content="Start at login" />
+          <CheckBox Classes="setting" IsChecked="{Binding HideOnDeactivate}"
+                    Content="Hide the search box when it loses focus" />
+          <CheckBox Classes="setting" IsChecked="{Binding VerboseLogging}"
+                    Content="Verbose logging (Debug level)" />
+
+          <TextBlock Classes="section" Text="Programs" />
+
+          <TextBlock Classes="label" Text="Editor executable" />
+          <TextBox Classes="setting" Text="{Binding EditorPath, Mode=TwoWay}" />
+          <TextBlock Classes="hint"
+                     Text="Leave blank to search the usual Visual Studio Code locations, including the copy of the code shim inside the application bundle." />
+
+          <TextBlock Classes="label" Text="Terminal application" />
+          <TextBox Classes="setting" Text="{Binding TerminalPath, Mode=TwoWay}" />
+          <TextBlock Classes="hint"
+                     Text="Leave blank to prefer iTerm and fall back to Terminal. This is an application name or a path to a .app bundle, not an executable: the session is resumed by asking the terminal to run the line, which is the only way either of them accepts one." />
+
+          <TextBlock Classes="section" Text="Ranking" />
+
+          <TextBlock Classes="label" Text="Maximum results" />
+          <TextBox Classes="setting" Text="{Binding MaxResults, Mode=TwoWay}" />
+
+          <TextBlock Classes="label" Text="Recency weight" />
+          <TextBox Classes="setting" Text="{Binding RecencyWeight, Mode=TwoWay}" />
+          <TextBlock Classes="hint"
+                     Text="How much a session touched today outscores an equally relevant old one. 0.6 means 1.6 times." />
+
+          <TextBlock Classes="label" Text="Recency half-life (days)" />
+          <TextBox Classes="setting" Text="{Binding RecencyHalfLifeDays, Mode=TwoWay}" />
+
+          <TextBlock Classes="label" Text="Title weight" />
+          <TextBox Classes="setting" Text="{Binding TitleWeight, Mode=TwoWay}" />
+
+          <TextBlock Classes="label" Text="Folder weight" />
+          <TextBox Classes="setting" Text="{Binding FolderWeight, Mode=TwoWay}" />
+
+          <TextBlock Classes="label" Text="Resume prompt weight" />
+          <TextBox Classes="setting" Text="{Binding LastPromptWeight, Mode=TwoWay}" />
+
+          <TextBlock Classes="label" Text="User prompt weight" />
+          <TextBox Classes="setting" Text="{Binding UserPromptWeight, Mode=TwoWay}" />
+
+          <TextBlock Classes="label" Text="Assistant text weight" />
+          <TextBox Classes="setting" Text="{Binding AssistantTextWeight, Mode=TwoWay}" />
+
+          <TextBlock Classes="section" Text="Locations" />
+
+          <TextBlock Classes="label" Text="Settings file" />
+          <TextBox Classes="setting" Text="{Binding SettingsFilePath, Mode=OneWay}" IsReadOnly="True" />
+
+          <TextBlock Classes="label" Text="Index" />
+          <TextBox Classes="setting" Text="{Binding IndexFilePath, Mode=OneWay}" IsReadOnly="True" />
+          <TextBlock Classes="hint" Text="{Binding IndexPathNotice, Mode=OneWay}" />
+
+          <TextBlock Classes="label" Text="Logs" />
+          <TextBox Classes="setting" Text="{Binding LogFolderPath, Mode=OneWay}" IsReadOnly="True" />
+
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+    <TextBlock Grid.Row="1"
+               Margin="2,12,2,0"
+               Foreground="{StaticResource ErrorTextBrush}"
+               FontSize="11"
+               TextWrapping="Wrap"
+               Text="{Binding ValidationMessage}"
+               IsVisible="{Binding ValidationMessage,
+                                   Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <StackPanel Grid.Row="2"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="8"
+                Margin="0,14,0,0">
+      <Button Name="CloseButton" Content="Close" MinWidth="84" />
+      <Button Content="Save" MinWidth="84" IsDefault="True" Command="{Binding SaveCommand}" />
+    </StackPanel>
+
+  </Grid>
+</Window>

@@ -1,0 +1,10 @@
+{"parentUuid":null,"isSidechain":false,"attachment":{"type":"pasted_text","content":"IGNORED ATTACHMENT PAYLOAD"},"type":"attachment","uuid":"at1","timestamp":"2026-03-01T09:59:00.000Z","cwd":"C:\\work\\decoy","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","gitBranch":"decoy"}
+{"type":"mode","mode":"acceptEdits","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"}
+{"type":"queue-operation","operation":"enqueue","reason":"user","content":"IGNORED QUEUE PAYLOAD","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","timestamp":"2026-03-01T09:59:30.000Z"}
+{"parentUuid":null,"isSidechain":false,"type":"system","subtype":"retry","level":"warning","content":"IGNORED SYSTEM PAYLOAD","timestamp":"2026-03-01T09:59:40.000Z","uuid":"s1","cwd":"C:\\work\\decoy","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","gitBranch":"decoy"}
+{"parentUuid":null,"isSidechain":false,"type":"user","message":{"role":"user","content":"summarise the reconciliation run from yesterday"},"uuid":"u1","timestamp":"2026-03-01T10:00:00.000Z","userType":"external","cwd":"C:\\work\\project","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","version":"2.0.0","gitBranch":"main"}
+{"type":"atis-latch","atis":true,"sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"}
+{"type":"bridge-session","bridgeSessionId":"b1","lastSequenceNum":4,"sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"}
+{"type":"pr-link","prNumber":12,"prRepository":"example/repo","prUrl":"https://example.invalid/pr/12","sessionId":"0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d","timestamp":"2026-03-01T10:05:00.000Z"}
+{"type":"file-history-snapshot","messageId":"m1","isSnapshotUpdate":false,"snapshot":{"trackedFileBackups":{"IGNORED":"SNAPSHOT PAYLOAD"}}}
+{"type":"file-history-delta","messageId":"m2","snapshotMessageId":"m1","trackingPath":"C:\\work\\decoy\\x.cs","backup":{"IGNORED":"DELTA PAYLOAD"},"timestamp":"2026-03-01T10:06:00.000Z"}

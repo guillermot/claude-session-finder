@@ -1,0 +1,32 @@
+<Project>
+
+  <!--
+    Repository-wide build settings.
+    TargetFramework is deliberately NOT set here: SessionFinder.Wpf targets net10.0-windows
+    while every other project targets net10.0.
+  -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <NoWarn>$(NoWarn);NU1902;NU1903</NoWarn>
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+    <IsPackable>false</IsPackable>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+  <!--
+    Test projects keep GenerateDocumentationFile on because IDE0005 (unused usings) only runs
+    in build when it is set; the XML summary requirement is waived instead.
+  -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != '' And $([System.String]::Copy('$(MSBuildProjectName)').EndsWith('Tests'))">
+    <IsTestProject>true</IsTestProject>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory).runsettings</RunSettingsFilePath>
+  </PropertyGroup>
+
+</Project>

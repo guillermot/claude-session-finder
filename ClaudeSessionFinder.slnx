@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SessionFinder.Cli/SessionFinder.Cli.csproj" />
+    <Project Path="src/SessionFinder.Core/SessionFinder.Core.csproj" />
+    <Project Path="src/SessionFinder.Infrastructure/SessionFinder.Infrastructure.csproj" />
+    <Project Path="src/SessionFinder.Mac/SessionFinder.Mac.csproj" />
+    <Project Path="src/SessionFinder.Presentation/SessionFinder.Presentation.csproj" />
+    <Project Path="src/SessionFinder.Wpf/SessionFinder.Wpf.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SessionFinder.Core.Tests/SessionFinder.Core.Tests.csproj" />
+    <Project Path="tests/SessionFinder.Infrastructure.Tests/SessionFinder.Infrastructure.Tests.csproj" />
+    <Project Path="tests/SessionFinder.Presentation.Tests/SessionFinder.Presentation.Tests.csproj" />
+  </Folder>
+</Solution>

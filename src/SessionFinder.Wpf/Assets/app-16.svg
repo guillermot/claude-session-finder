@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Claude Session Finder — the small layer of the icon, used for 16, 20 and 24 px.
+
+  It is a separate drawing rather than a scaled copy of app.svg because downscaling the large one
+  spreads a 1.5 px stroke over two pixels at half intensity and the lens stops being a ring. Here the
+  folder is on whole pixels, the lens strokes are thicker in proportion, and the handle is longer, so
+  that at the size the notification area actually draws there is still a circle with a stick on it.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <rect x="1" y="2" width="6" height="4" rx="1" ry="1" fill="#7FB2F0" />
+  <rect x="1" y="4" width="14" height="10" rx="1.5" ry="1.5" fill="#4A90E2" />
+  <circle cx="7.6" cy="8.4" r="3" fill="none" stroke="#FFFFFF" stroke-width="1.8" />
+  <line x1="10" y1="10.8" x2="12.4" y2="13" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" />
+</svg>

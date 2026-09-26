@@ -1,0 +1,131 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:search="clr-namespace:SessionFinder.Presentation.Search;assembly=SessionFinder.Presentation"
+        xmlns:actions="clr-namespace:SessionFinder.Presentation.Actions;assembly=SessionFinder.Presentation"
+        x:Class="SessionFinder.Mac.Views.SearchWindow"
+        x:ClassModifier="internal"
+        x:DataType="search:SearchViewModel"
+        Title="Claude Session Finder"
+        Width="760"
+        SizeToContent="Height"
+        MaxHeight="620"
+        CanResize="False"
+        WindowDecorations="None"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        WindowStartupLocation="Manual"
+        UseLayoutRounding="True"
+        FontFamily="avares://Avalonia.Fonts.Inter/Assets#Inter">
+
+  <Border Background="{StaticResource SurfaceBrush}"
+          BorderBrush="{StaticResource SurfaceEdgeBrush}"
+          BorderThickness="1"
+          CornerRadius="10"
+          Padding="6">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+      <TextBox Name="QueryBox"
+               Grid.Row="0"
+               Classes="query"
+               Margin="14,10"
+               PlaceholderText="Search your sessions…"
+               Text="{Binding Query}" />
+
+      <Grid Grid.Row="1" Margin="14,0,14,6">
+        <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+                   FontSize="11"
+                   Text="Most recent sessions"
+                   IsVisible="{Binding IsShowingRecentSessions}" />
+        <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+                   FontSize="11"
+                   Text="No session matches that."
+                   IsVisible="{Binding IsEmpty}" />
+        <TextBlock Foreground="{StaticResource ErrorTextBrush}"
+                   FontSize="11"
+                   TextWrapping="Wrap"
+                   Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding ErrorMessage,
+                                        Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </Grid>
+
+      <ListBox Name="ResultList"
+               Grid.Row="2"
+               Background="Transparent"
+               BorderThickness="0"
+               MaxHeight="470"
+               Padding="0,0,0,6"
+               Classes="results"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+               ScrollViewer.AllowAutoHide="True"
+               ItemsSource="{Binding Results}"
+               SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="search:SessionResultViewModel">
+            <StackPanel>
+              <TextBlock Text="{Binding Title}"
+                         Foreground="{StaticResource PrimaryTextBrush}"
+                         FontSize="14"
+                         TextTrimming="CharacterEllipsis" />
+              <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                <TextBlock Text="{Binding LastActivity}"
+                           Foreground="{StaticResource AccentTextBrush}"
+                           FontSize="11" />
+                <TextBlock Text="  ·  " Foreground="{StaticResource SecondaryTextBrush}" FontSize="11" />
+                <TextBlock Text="{Binding Folder}"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           FontSize="11"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="  ·  "
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           FontSize="11"
+                           IsVisible="{Binding Branch,
+                                               Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <TextBlock Text="{Binding Branch}"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           FontSize="11"
+                           IsVisible="{Binding Branch,
+                                               Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+              <TextBlock Text="{Binding Snippet}"
+                         Foreground="{StaticResource SecondaryTextBrush}"
+                         FontSize="11"
+                         Margin="0,3,0,0"
+                         TextTrimming="CharacterEllipsis"
+                         IsVisible="{Binding Snippet,
+                                             Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <!--
+        The shortcuts are spelled out rather than discovered, because a launcher that is on screen
+        for two seconds at a time never teaches anyone a key it does not name. They are written in
+        the modifier symbols a Mac keyboard is labelled with, which is how every other application
+        on the machine writes them. The second line appears only for a session whose folder was
+        never recorded, and it is what turns four greyed-out shortcuts into an explanation.
+      -->
+      <Border Grid.Row="3"
+              BorderBrush="{StaticResource SurfaceEdgeBrush}"
+              BorderThickness="0,1,0,0"
+              Padding="14,6,14,4">
+        <StackPanel DataContext="{Binding Actions}" x:DataType="actions:SessionActionsViewModel">
+          <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+                     FontSize="10"
+                     TextWrapping="Wrap"
+                     Text="Enter open in VS Code  ·  ⌘Enter resume  ·  ⇧⌘Enter show in Finder  ·  ⌘C copy path  ·  ⇧⌘C copy id  ·  ⌥⌘C copy resume command" />
+          <TextBlock Foreground="{StaticResource WarningTextBrush}"
+                     FontSize="10"
+                     Margin="0,3,0,0"
+                     TextWrapping="Wrap"
+                     Text="{Binding DisabledReason}"
+                     IsVisible="{Binding DisabledReason,
+                                         Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        </StackPanel>
+      </Border>
+
+    </Grid>
+  </Border>
+</Window>

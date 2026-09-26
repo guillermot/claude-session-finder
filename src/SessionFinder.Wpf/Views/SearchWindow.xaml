@@ -1,0 +1,159 @@
+<Window x:Class="SessionFinder.Wpf.Views.SearchWindow"
+        x:ClassModifier="internal"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:search="clr-namespace:SessionFinder.Presentation.Search;assembly=SessionFinder.Presentation"
+        Title="Claude Session Finder"
+        Width="760"
+        SizeToContent="Height"
+        MaxHeight="620"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="Manual"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display">
+
+  <Border Background="{StaticResource SurfaceBrush}"
+          BorderBrush="{StaticResource SurfaceEdgeBrush}"
+          BorderThickness="1"
+          CornerRadius="10"
+          Padding="6">
+    <Grid>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <!--
+        The prompt follows the text box rather than the view model's query, because the query is
+        debounced: bound to it, the prompt would linger for the length of the debounce over text the
+        user has already typed and flash back on between the last backspace and the empty search.
+        The box is unaware of it — it is a sibling that cannot be hit, focused or selected, so the
+        caret, the selection and every shortcut the window intercepts behave as they did.
+      -->
+      <Grid Grid.Row="0">
+        <TextBox x:Name="QueryBox"
+                 Style="{StaticResource QueryBoxStyle}"
+                 Margin="14,10,14,10"
+                 Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" />
+        <TextBlock Text="Search your sessions…" Margin="18,10,14,10">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource QueryPlaceholderStyle}">
+              <Setter Property="Visibility" Value="Collapsed" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Text, ElementName=QueryBox}" Value="">
+                  <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+      </Grid>
+
+      <Grid Grid.Row="1" Margin="14,0,14,6">
+        <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+                   FontSize="11"
+                   Text="Most recent sessions"
+                   Visibility="{Binding IsShowingRecentSessions, Converter={StaticResource BooleanToVisibility}}" />
+        <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+                   FontSize="11"
+                   Text="No session matches that."
+                   Visibility="{Binding IsEmpty, Converter={StaticResource BooleanToVisibility}}" />
+        <TextBlock Foreground="{StaticResource ErrorTextBrush}"
+                   FontSize="11"
+                   TextWrapping="Wrap"
+                   Text="{Binding ErrorMessage}"
+                   Visibility="{Binding ErrorMessage, Converter={StaticResource NullToCollapsed}}" />
+      </Grid>
+
+      <ListBox x:Name="ResultList"
+               Grid.Row="2"
+               Background="Transparent"
+               BorderThickness="0"
+               MaxHeight="470"
+               Padding="0,0,0,6"
+               ItemContainerStyle="{StaticResource ResultRowStyle}"
+               ItemsSource="{Binding Results}"
+               SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+               HorizontalContentAlignment="Stretch">
+        <!--
+          The implicit style reaches the scroll viewer inside the list's own template, which is the
+          only way to restyle it without replacing the list template wholesale. Its scope is the
+          list rather than the window so that it cannot also reach the scroll viewer inside a text
+          box's template, where an overlay bar with no horizontal scrolling would stop long text
+          from scrolling under the caret. The settings form names the same style on its own scroll
+          viewer for that reason.
+        -->
+        <ListBox.Resources>
+          <Style TargetType="ScrollViewer" BasedOn="{StaticResource OverlayScrollViewerStyle}" />
+        </ListBox.Resources>
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="{x:Type search:SessionResultViewModel}">
+            <StackPanel>
+              <TextBlock Text="{Binding Title}"
+                         Foreground="{StaticResource PrimaryTextBrush}"
+                         FontSize="14"
+                         TextTrimming="CharacterEllipsis" />
+              <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                <TextBlock Text="{Binding LastActivity}"
+                           Foreground="{StaticResource AccentTextBrush}"
+                           FontSize="11" />
+                <TextBlock Text="  ·  " Foreground="{StaticResource SecondaryTextBrush}" FontSize="11" />
+                <TextBlock Text="{Binding Folder}"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           FontSize="11"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="  ·  "
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           FontSize="11"
+                           Visibility="{Binding Branch, Converter={StaticResource NullToCollapsed}}" />
+                <TextBlock Text="{Binding Branch}"
+                           Foreground="{StaticResource SecondaryTextBrush}"
+                           FontSize="11"
+                           Visibility="{Binding Branch, Converter={StaticResource NullToCollapsed}}" />
+              </StackPanel>
+              <TextBlock Text="{Binding Snippet}"
+                         Foreground="{StaticResource SecondaryTextBrush}"
+                         FontSize="11"
+                         Margin="0,3,0,0"
+                         TextTrimming="CharacterEllipsis"
+                         Visibility="{Binding Snippet, Converter={StaticResource NullToCollapsed}}" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <!--
+        The shortcuts are spelled out rather than discovered, because a launcher that is on screen
+        for two seconds at a time never teaches anyone a key it does not name. The second line
+        appears only for a session whose folder was never recorded, and it is what turns four
+        greyed-out shortcuts into an explanation.
+      -->
+      <Border Grid.Row="3"
+              BorderBrush="{StaticResource SurfaceEdgeBrush}"
+              BorderThickness="0,1,0,0"
+              Padding="14,6,14,4">
+        <StackPanel DataContext="{Binding Actions}">
+          <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+                     FontSize="10"
+                     TextWrapping="Wrap"
+                     Text="Enter open in VS Code  ·  Ctrl+Enter resume  ·  Ctrl+Shift+Enter show in Explorer  ·  Ctrl+C copy path  ·  Ctrl+Shift+C copy id  ·  Ctrl+Alt+C copy resume command" />
+          <TextBlock Foreground="{StaticResource WarningTextBrush}"
+                     FontSize="10"
+                     Margin="0,3,0,0"
+                     TextWrapping="Wrap"
+                     Text="{Binding DisabledReason}"
+                     Visibility="{Binding DisabledReason, Converter={StaticResource NullToCollapsed}}" />
+        </StackPanel>
+      </Border>
+
+    </Grid>
+  </Border>
+</Window>
