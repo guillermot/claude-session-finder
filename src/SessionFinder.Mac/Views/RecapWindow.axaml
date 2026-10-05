@@ -1,0 +1,147 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:recap="clr-namespace:SessionFinder.Presentation.Recap;assembly=SessionFinder.Presentation"
+        x:Class="SessionFinder.Mac.Views.RecapWindow"
+        x:ClassModifier="internal"
+        x:DataType="recap:RecapViewModel"
+        Title="Daily recap"
+        Width="680"
+        Height="640"
+        MinWidth="480"
+        MinHeight="380"
+        CanResize="True"
+        ShowInTaskbar="True"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource SurfaceBrush}"
+        UseLayoutRounding="True"
+        FontFamily="avares://Avalonia.Fonts.Inter/Assets#Inter">
+
+  <Window.Styles>
+    <!-- Round, chromeless step buttons: the date is the subject of the header, not the buttons. -->
+    <Style Selector="Button.step">
+      <Setter Property="Width" Value="34" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="17" />
+      <Setter Property="FontSize" Value="20" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{StaticResource SurfaceEdgeBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
+    <Style Selector="Button.step:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource HoverBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource SurfaceEdgeBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="Button.step:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.step:disabled">
+      <Setter Property="Opacity" Value="0.3" />
+    </Style>
+
+    <!-- Footer buttons: quiet outlines, with the one thing people come here to do filled in. -->
+    <Style Selector="Button.quiet, Button.primary">
+      <Setter Property="MinWidth" Value="84" />
+      <Setter Property="Height" Value="32" />
+      <Setter Property="Padding" Value="14,0" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
+    <Style Selector="Button.quiet">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{StaticResource SurfaceEdgeBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="Button.quiet:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource HoverBrush}" />
+      <Setter Property="BorderBrush" Value="{StaticResource SurfaceEdgeBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{StaticResource SelectionBrush}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#FF35609A" />
+      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    </Style>
+  </Window.Styles>
+
+  <Grid Margin="22,18,22,16" RowDefinitions="Auto,*,Auto">
+
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="2,0,0,14">
+      <StackPanel Grid.Column="0" VerticalAlignment="Center">
+        <TextBlock Text="{Binding Heading}"
+                   Foreground="{StaticResource PrimaryTextBrush}"
+                   FontSize="22"
+                   FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Subheading}"
+                   Foreground="{StaticResource SecondaryTextBrush}"
+                   FontSize="12"
+                   Margin="0,3,0,0" />
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Classes="step" Content="‹"
+                ToolTip.Tip="Previous active day (←)"
+                Command="{Binding PreviousDayCommand}" />
+        <Button Classes="step" Content="›"
+                ToolTip.Tip="Next active day (→)"
+                Command="{Binding NextDayCommand}" />
+      </StackPanel>
+    </Grid>
+
+    <Border Grid.Row="1"
+            Background="{StaticResource FieldSurfaceBrush}"
+            BorderBrush="{StaticResource SurfaceEdgeBrush}"
+            BorderThickness="1"
+            CornerRadius="10">
+      <ScrollViewer Classes="overlay"
+                    AllowAutoHide="True"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled"
+                    Padding="22,16,22,20">
+        <StackPanel Name="Document" />
+      </ScrollViewer>
+    </Border>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="2,14,0,0">
+      <TextBlock Grid.Column="0"
+                 Text="{Binding Status}"
+                 Foreground="{StaticResource AccentTextBrush}"
+                 FontSize="11"
+                 VerticalAlignment="Center"
+                 TextWrapping="Wrap"
+                 IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <TextBlock Grid.Column="0"
+                 Text="← → change day  ·  Enter copy  ·  Esc close"
+                 Foreground="{StaticResource SecondaryTextBrush}"
+                 FontSize="11"
+                 VerticalAlignment="Center"
+                 IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Button Classes="quiet"
+                Content="{Binding ToggleViewText}"
+                IsVisible="{Binding HasSummary}"
+                Command="{Binding ToggleViewCommand}" />
+        <Button Classes="quiet"
+                Content="✦ Summarize with Claude"
+                IsVisible="{Binding CanSummarize}"
+                Command="{Binding SummarizeCommand}" />
+        <Button Name="CloseButton" Classes="quiet" Content="Close" />
+        <Button Classes="primary" Content="Copy" Command="{Binding CopyCommand}" />
+      </StackPanel>
+    </Grid>
+
+  </Grid>
+</Window>

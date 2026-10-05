@@ -38,8 +38,22 @@ Resuming opens Windows Terminal (falling back to the command shell) on Windows, 
 
 ## Tray / menu-bar menu
 
-`Search…` · `Rebuild index` · `Open settings` · `Open log folder` · `Exit` (`Quit` on macOS).
+`Search…` · `Daily recap…` · `Rebuild index` · `Open settings` · `Open log folder` · `Exit` (`Quit` on macOS).
 The tooltip / menu shows the chord that was actually registered, which is not always the configured one.
+
+## Daily recap
+
+**Daily recap…** in the tray / menu-bar menu answers the stand-up question "what did you do yesterday?".
+
+- It opens on your **last active day before today**: Friday on a Monday, your last working day after time off. ◀ ▶ step between days that had activity, up to today.
+- The day is shown in full: project → branch → sessions (title and prompt count) → **your git commits** that day. Earlier active days are condensed to one line per project.
+- **Copy** puts the Markdown on the clipboard, ready to paste into a chat.
+- A day starts at 04:00 by default, so a session that runs past midnight counts toward the day it began. Harness noise (IDE selection notices, slash-command envelopes, interrupted turns) is not counted as work.
+- Sessions in a repository's subfolders or worktrees are grouped as one project. Commits are read with your own `git`, filtered by each repository's `user.email`.
+
+**Summarize with Claude** (off by default) asks your own `claude` command line, in print mode with no tools and no saved session, to turn the recap into first-person stand-up bullets. Turning it on in settings is what allows the day's session titles, prompts and commit messages to leave the machine; nothing else in the application does that.
+
+Settings (`Finder:Recap` in the settings file): `DayStartHour` (4), `LookbackDays` (4), `IncludeGit` (true), `EnableAiSummary` (false), `ClaudeExecutable` (blank = search the path and the usual install folders), `SummaryModel` (`haiku`).
 
 ## Where everything lives
 
@@ -73,6 +87,7 @@ dotnet run --project src/SessionFinder.Cli -- <command>
 | `search "<query>"` | Ranked search against the index |
 | `watch` | Follows the files and indexes changes live |
 | `status` | Counters, parse errors, db size, last pass |
+| `recap [--date yyyy-MM-dd] [--days N] [--no-git] [--prompts] [--summarize]` | Prints the daily recap as Markdown; `--summarize` adds the Claude summary |
 
 ## Building from source
 

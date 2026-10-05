@@ -124,6 +124,7 @@ internal partial class SearchWindow : Window, IAppWindow
         Key.Up when modifiers == ModifierKeys.None => MoveSelection(-SelectionStep),
         Key.Enter => Run(OpenShortcutFor(modifiers)),
         Key.C when modifiers.HasFlag(ModifierKeys.Control) => Run(CopyShortcutFor(modifiers)),
+        Key.R when modifiers == ModifierKeys.Control => Run(_viewModel.ShowRecapCommand),
         _ => false,
     };
 

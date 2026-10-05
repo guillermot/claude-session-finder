@@ -26,6 +26,7 @@ namespace SessionFinder.Wpf.Platform;
 internal sealed class NotifyIconTray : ITrayIcon, IUserNotifier, IDisposable
 {
     private const string SearchMenuText = "Search…";
+    private const string RecapMenuText = "Daily recap…";
     private const string RebuildIndexMenuText = "Rebuild index";
     private const string SettingsMenuText = "Open settings";
     private const string LogFolderMenuText = "Open log folder";
@@ -48,6 +49,7 @@ internal sealed class NotifyIconTray : ITrayIcon, IUserNotifier, IDisposable
         var menu = new WinForms.ContextMenuStrip();
 
         menu.Items.Add(SearchMenuText, image: null, (_, _) => SearchRequested?.Invoke(this, EventArgs.Empty));
+        menu.Items.Add(RecapMenuText, image: null, (_, _) => RecapRequested?.Invoke(this, EventArgs.Empty));
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(RebuildIndexMenuText, image: null, (_, _) => RebuildIndexRequested?.Invoke(this, EventArgs.Empty));
         menu.Items.Add(SettingsMenuText, image: null, (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty));
@@ -69,6 +71,9 @@ internal sealed class NotifyIconTray : ITrayIcon, IUserNotifier, IDisposable
 
     /// <inheritdoc />
     public event EventHandler? SearchRequested;
+
+    /// <inheritdoc />
+    public event EventHandler? RecapRequested;
 
     /// <inheritdoc />
     public event EventHandler? RebuildIndexRequested;

@@ -51,6 +51,25 @@
           <CheckBox Classes="setting" IsChecked="{Binding VerboseLogging}"
                     Content="Verbose logging (Debug level)" />
 
+          <TextBlock Classes="section" Text="Daily recap" />
+
+          <TextBlock Classes="label" Text="Day starts at (hour, 0–12)" />
+          <TextBox Classes="setting" Text="{Binding RecapDayStartHour, Mode=TwoWay}" />
+          <TextBlock Classes="hint"
+                     Text="Work done before this hour counts toward the previous day, so a session that runs past midnight is reported with the day it began." />
+
+          <TextBlock Classes="label" Text="Earlier days to include (0–14)" />
+          <TextBox Classes="setting" Text="{Binding RecapLookbackDays, Mode=TwoWay}" />
+          <TextBlock Classes="hint"
+                     Text="Days with activity, not calendar days: a weekend does not use them up." />
+
+          <CheckBox Classes="setting" IsChecked="{Binding RecapIncludeGit}"
+                    Content="List my git commits from the repositories I worked in" />
+          <CheckBox Classes="setting" IsChecked="{Binding RecapAiSummary}"
+                    Content="Offer to summarize the recap with Claude" />
+          <TextBlock Classes="hint"
+                     Text="Sends the day's session titles, prompts and commit messages to Claude through your own claude command. Nothing else in the application sends transcript text anywhere." />
+
           <TextBlock Classes="section" Text="Programs" />
 
           <TextBlock Classes="label" Text="Editor executable" />

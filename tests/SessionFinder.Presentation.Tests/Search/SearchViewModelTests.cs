@@ -12,6 +12,18 @@ public sealed class SearchViewModelTests
     private static readonly TimeSpan Delay = TimeSpan.FromMilliseconds(150);
 
     [Fact]
+    public void ShowRecap_TheButtonOrShortcutIsUsed_AsksTheHeadForTheRecapOnce()
+    {
+        using var fixture = new Fixture();
+        var requests = 0;
+        fixture.ViewModel.RecapRequested += (_, _) => requests++;
+
+        fixture.ViewModel.ShowRecapCommand.Execute(null);
+
+        requests.Should().Be(1);
+    }
+
+    [Fact]
     public async Task Query_TypedText_PublishesTheRankedRows()
     {
         using var fixture = new Fixture();

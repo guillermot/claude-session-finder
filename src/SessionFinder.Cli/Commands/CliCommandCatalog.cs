@@ -16,6 +16,10 @@ public static class CliCommandCatalog
         new("search", "search <query>", "Run a search against the index and print ranked results."),
         new("watch", "watch", "Follow session files and index changes as they land."),
         new("status", "status", "Print index counters, parse errors, database size and last run time."),
+        new(
+            "recap",
+            "recap [--date <day>] [--days <n>] [--no-git] [--prompts] [--summarize]",
+            "Print what you did on your last active day, and the days before it, for a stand-up."),
     ];
 
     /// <summary>

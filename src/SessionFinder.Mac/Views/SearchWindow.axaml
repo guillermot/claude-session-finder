@@ -26,12 +26,24 @@
           Padding="6">
     <Grid RowDefinitions="Auto,Auto,*,Auto">
 
-      <TextBox Name="QueryBox"
-               Grid.Row="0"
-               Classes="query"
-               Margin="14,10"
-               PlaceholderText="Search your sessions…"
-               Text="{Binding Query}" />
+      <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+        <TextBox Name="QueryBox"
+                 Grid.Column="0"
+                 Classes="query"
+                 Margin="14,10"
+                 PlaceholderText="Search your sessions…"
+                 Text="{Binding Query}" />
+        <Button Grid.Column="1"
+                Content="Daily recap"
+                Focusable="False"
+                Margin="0,0,10,0"
+                Padding="10,4"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{StaticResource SecondaryTextBrush}"
+                ToolTip.Tip="What you did on your last active day (⌘R)"
+                Command="{Binding ShowRecapCommand}" />
+      </Grid>
 
       <Grid Grid.Row="1" Margin="14,0,14,6">
         <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
@@ -115,7 +127,7 @@
           <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
                      FontSize="10"
                      TextWrapping="Wrap"
-                     Text="Enter open in VS Code  ·  ⌘Enter resume  ·  ⇧⌘Enter show in Finder  ·  ⌘C copy path  ·  ⇧⌘C copy id  ·  ⌥⌘C copy resume command" />
+                     Text="Enter open in VS Code  ·  ⌘Enter resume  ·  ⇧⌘Enter show in Finder  ·  ⌘C copy path  ·  ⇧⌘C copy id  ·  ⌥⌘C copy resume command  ·  ⌘R daily recap" />
           <TextBlock Foreground="{StaticResource WarningTextBrush}"
                      FontSize="10"
                      Margin="0,3,0,0"

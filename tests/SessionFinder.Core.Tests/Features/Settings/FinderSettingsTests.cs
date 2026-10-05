@@ -9,7 +9,7 @@ public sealed class FinderSettingsTests
     [Fact]
     public void From_NoHotkeyWasEverConfigured_ShowsTheOneTheApplicationAsksForFirst()
     {
-        var settings = FinderSettings.From(new ShellOptions(), new SearchOptions(), new LogLevelOptions());
+        var settings = FinderSettings.From(new ShellOptions(), new SearchOptions(), new LogLevelOptions(), new RecapOptions());
 
         settings.Hotkey.Should().Be(ShellOptions.DefaultHotkey);
     }
@@ -19,7 +19,7 @@ public sealed class FinderSettingsTests
     {
         var logLevel = new LogLevelOptions { Default = LogLevelOptions.VerboseLevel };
 
-        var settings = FinderSettings.From(new ShellOptions(), new SearchOptions(), logLevel);
+        var settings = FinderSettings.From(new ShellOptions(), new SearchOptions(), logLevel, new RecapOptions());
 
         settings.VerboseLogging.Should().BeTrue();
     }
@@ -29,9 +29,27 @@ public sealed class FinderSettingsTests
     {
         var logLevel = new LogLevelOptions { Default = LogLevelOptions.NormalLevel };
 
-        var settings = FinderSettings.From(new ShellOptions(), new SearchOptions(), logLevel);
+        var settings = FinderSettings.From(new ShellOptions(), new SearchOptions(), logLevel, new RecapOptions());
 
         settings.VerboseLogging.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(-1, 4)]
+    [InlineData(13, 4)]
+    [InlineData(4, -1)]
+    [InlineData(4, 15)]
+    public void Validate_ARecapValueOutOfRange_IsRejected(int dayStartHour, int lookbackDays)
+    {
+        var settings = Defaults() with { RecapDayStartHour = dayStartHour, RecapLookbackDays = lookbackDays };
+
+        settings.Validate().IsFailure.Should().BeTrue();
+    }
+
+    [Fact]
+    public void From_TheRecapDefaults_KeepTheAiSummaryOff()
+    {
+        Defaults().RecapAiSummary.Should().BeFalse();
     }
 
     [Fact]
@@ -39,7 +57,7 @@ public sealed class FinderSettingsTests
     {
         var search = new SearchOptions { TitleWeight = 11.0 };
 
-        var settings = FinderSettings.From(new ShellOptions(), search, new LogLevelOptions());
+        var settings = FinderSettings.From(new ShellOptions(), search, new LogLevelOptions(), new RecapOptions());
 
         settings.ChunkWeights.Title.Should().Be(11.0);
     }
@@ -101,5 +119,5 @@ public sealed class FinderSettingsTests
     }
 
     private static FinderSettings Defaults() =>
-        FinderSettings.From(new ShellOptions(), new SearchOptions(), new LogLevelOptions());
+        FinderSettings.From(new ShellOptions(), new SearchOptions(), new LogLevelOptions(), new RecapOptions());
 }

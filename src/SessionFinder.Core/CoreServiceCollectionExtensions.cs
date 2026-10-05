@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SessionFinder.Core.Configuration;
+using SessionFinder.Core.Features.DailyRecap;
 using SessionFinder.Core.Features.IndexSessionFile;
 using SessionFinder.Core.Features.IndexStatus;
 using SessionFinder.Core.Features.ReconcileIndex;
@@ -42,6 +43,9 @@ public static class CoreServiceCollectionExtensions
         services.AddOptions<LogLevelOptions>()
             .Bind(configuration.GetSection(LogLevelOptions.SectionName));
 
+        services.AddOptions<RecapOptions>()
+            .Bind(configuration.GetSection(RecapOptions.SectionName));
+
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IIndexSessionFileHandler, IndexSessionFileHandler>();
         services.TryAddSingleton<IReconcileIndexHandler, ReconcileIndexHandler>();
@@ -53,6 +57,8 @@ public static class CoreServiceCollectionExtensions
         services.TryAddSingleton<ICopySessionDetailHandler, CopySessionDetailHandler>();
         services.TryAddSingleton<IGetSettingsHandler, GetSettingsHandler>();
         services.TryAddSingleton<IUpdateSettingsHandler, UpdateSettingsHandler>();
+        services.TryAddSingleton<IGetDailyRecapHandler, GetDailyRecapHandler>();
+        services.TryAddSingleton<ISummarizeRecapHandler, SummarizeRecapHandler>();
 
         return services;
     }
