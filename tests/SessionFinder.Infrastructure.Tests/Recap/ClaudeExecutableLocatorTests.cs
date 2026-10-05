@@ -9,7 +9,10 @@ public sealed class ClaudeExecutableLocatorTests
     [Fact]
     public void Find_OnThePath_PrefersThePath()
     {
-        var found = Find("/usr/bin:/opt/tools", "/opt/tools/claude", "/Users/me/.local/bin/claude");
+        var found = Find(
+            "/usr/bin:/opt/tools",
+            Path.Combine("/opt/tools", "claude"),
+            Path.Combine(Home, ".local", "bin", "claude"));
 
         found.Should().Be(Path.Combine("/opt/tools", "claude"));
     }
