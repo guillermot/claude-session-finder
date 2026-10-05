@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using SessionFinder.Core.Features.Search;
 using SessionFinder.Presentation.Abstractions;
@@ -97,6 +98,12 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
     public SessionActionsViewModel Actions { get; }
 
     /// <summary>
+    /// Raised when the user asks for the daily recap from the search box. The head hides the box
+    /// and opens the recap window, the same one the menu entry opens.
+    /// </summary>
+    public event EventHandler? RecapRequested;
+
+    /// <summary>
     /// The search that is scheduled or running. It completes when that search has published, been
     /// superseded or been cancelled, and it is what a caller awaits to know the list has settled.
     /// </summary>
@@ -111,6 +118,10 @@ public sealed partial class SearchViewModel : ObservableObject, IDisposable
     /// being written to by the same process, so the answer from a minute ago may be stale.
     /// </summary>
     public void Refresh() => RequestSearch();
+
+    /// <summary>Asks the head for the daily recap window.</summary>
+    [RelayCommand]
+    public void ShowRecap() => RecapRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
     /// Empties the search box, which falls back to listing the most recently active sessions.

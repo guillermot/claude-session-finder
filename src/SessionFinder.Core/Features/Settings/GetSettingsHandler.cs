@@ -16,6 +16,7 @@ public sealed class GetSettingsHandler(
     IOptionsMonitor<ShellOptions> shell,
     IOptionsMonitor<SearchOptions> search,
     IOptionsMonitor<LogLevelOptions> logLevel,
+    IOptionsMonitor<RecapOptions> recap,
     IApplicationPaths paths) : IGetSettingsHandler
 {
     /// <inheritdoc />
@@ -26,7 +27,7 @@ public sealed class GetSettingsHandler(
         cancellationToken.ThrowIfCancellationRequested();
 
         var result = new GetSettingsResult(
-            FinderSettings.From(shell.CurrentValue, search.CurrentValue, logLevel.CurrentValue),
+            FinderSettings.From(shell.CurrentValue, search.CurrentValue, logLevel.CurrentValue, recap.CurrentValue),
             paths.SettingsFilePath,
             paths.IndexFilePath,
             paths.LogFolderPath);

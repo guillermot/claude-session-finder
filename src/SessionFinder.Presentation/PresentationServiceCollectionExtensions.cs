@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using SessionFinder.Core.Configuration;
 using SessionFinder.Presentation.Actions;
+using SessionFinder.Presentation.Recap;
 using SessionFinder.Presentation.Search;
 using SessionFinder.Presentation.Settings;
 using SessionFinder.Presentation.Shell;
@@ -39,6 +40,7 @@ public static class PresentationServiceCollectionExtensions
         services.TryAddSingleton<SessionActionsViewModel>();
         services.TryAddSingleton<SearchViewModel>();
         services.TryAddSingleton<SettingsViewModel>();
+        services.TryAddSingleton<RecapViewModel>();
         services.TryAddSingleton<HotkeyRegistrar>();
         services.TryAddSingleton<AutostartReconciler>();
         services.TryAddSingleton<IndexMaintenance>();

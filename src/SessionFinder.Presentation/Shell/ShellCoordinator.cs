@@ -76,6 +76,9 @@ public sealed class ShellCoordinator : IDisposable
         _guard = guard;
     }
 
+    /// <summary>Raised when the user asks, from the tray menu, for the daily recap window.</summary>
+    public event EventHandler? RecapRequested;
+
     /// <summary>Raised when the user asks, from the tray menu, for the settings window.</summary>
     public event EventHandler? SettingsRequested;
 
@@ -103,6 +106,7 @@ public sealed class ShellCoordinator : IDisposable
         _registrar.RegistrationChanged += OnRegistrationChanged;
 
         _tray.SearchRequested += OnSearchRequested;
+        _tray.RecapRequested += OnRecapRequested;
         _tray.RebuildIndexRequested += OnRebuildIndexRequested;
         _tray.SettingsRequested += OnSettingsRequested;
         _tray.LogFolderRequested += OnLogFolderRequested;
@@ -150,6 +154,7 @@ public sealed class ShellCoordinator : IDisposable
         _registrar.RegistrationChanged -= OnRegistrationChanged;
 
         _tray.SearchRequested -= OnSearchRequested;
+        _tray.RecapRequested -= OnRecapRequested;
         _tray.RebuildIndexRequested -= OnRebuildIndexRequested;
         _tray.SettingsRequested -= OnSettingsRequested;
         _tray.LogFolderRequested -= OnLogFolderRequested;
@@ -190,6 +195,9 @@ public sealed class ShellCoordinator : IDisposable
     private void OnRegistrationChanged(object? sender, EventArgs e) => ReportRegistration();
 
     private void OnSearchRequested(object? sender, EventArgs e) => ShowSearch();
+
+    private void OnRecapRequested(object? sender, EventArgs e) =>
+        RecapRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnSettingsRequested(object? sender, EventArgs e) =>
         SettingsRequested?.Invoke(this, EventArgs.Empty);

@@ -36,5 +36,6 @@ internal sealed class FakeSettingsHandlers : IGetSettingsHandler, IUpdateSetting
     public static FinderSettings Defaults() => FinderSettings.From(
         new ShellOptions(),
         new SearchOptions(),
-        new LogLevelOptions());
+        new LogLevelOptions(),
+        new RecapOptions());
 }

@@ -13,7 +13,7 @@ namespace SessionFinder.Infrastructure.Persistence;
 /// provider pools by connection string, and it keeps a reader isolated from whatever transaction
 /// the writer happens to be in.
 /// </remarks>
-public sealed class SqliteSessionIndexReader(SqliteIndexDatabase database) : ISessionIndexReader
+public sealed class SqliteSessionIndexReader(SqliteIndexDatabase database) : ISessionIndexReader, ISessionActivityReader
 {
     private const string SnippetOpenMarker = "[";
     private const string SnippetCloseMarker = "]";
@@ -45,6 +45,23 @@ public sealed class SqliteSessionIndexReader(SqliteIndexDatabase database) : ISe
         }
 
         return await Task.Run(() => RunSearch(request, cancellationToken), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<SessionActivity>> GetActivityAsync(
+        DateTimeOffset from,
+        DateTimeOffset to,
+        bool includeAssistantText,
+        CancellationToken cancellationToken)
+    {
+        if (!File.Exists(database.DatabasePath) || from >= to)
+        {
+            return [];
+        }
+
+        return await Task
+            .Run(() => ReadActivity(from, to, includeAssistantText, cancellationToken), cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private IReadOnlyList<SessionMatch> RunSearch(SessionSearchRequest request, CancellationToken cancellationToken)
@@ -95,6 +112,89 @@ public sealed class SqliteSessionIndexReader(SqliteIndexDatabase database) : ISe
         command.Parameters.AddWithValue("$snippet_tokens", SnippetTokenBudget);
 
         return command;
+    }
+
+    /// <summary>
+    /// Reads every message in the window, grouped by session. The rows arrive ordered by session
+    /// and then by time, so each session is assembled in one pass without a lookup.
+    /// </summary>
+    private IReadOnlyList<SessionActivity> ReadActivity(
+        DateTimeOffset from,
+        DateTimeOffset to,
+        bool includeAssistantText,
+        CancellationToken cancellationToken)
+    {
+        using var connection = new SqliteConnection(database.ReadOnlyConnectionString);
+        connection.Open();
+
+        if (!IsCurrentSchema(connection))
+        {
+            return [];
+        }
+
+        using var command = connection.CreateCommand();
+        command.CommandText = Sql.SelectActivity;
+        command.Parameters.AddWithValue("$from", from.ToUnixTimeMilliseconds());
+        command.Parameters.AddWithValue("$to", to.ToUnixTimeMilliseconds());
+        command.Parameters.AddWithValue("$user_prompt", (int)ChunkKind.UserPrompt);
+        command.Parameters.AddWithValue(
+            "$second_kind",
+            (int)(includeAssistantText ? ChunkKind.AssistantText : ChunkKind.UserPrompt));
+
+        using var reader = command.ExecuteReader();
+        var sessions = new List<SessionActivity>();
+        SessionActivity? current = null;
+        string? currentId = null;
+        List<SearchChunk> chunks = [];
+
+        while (reader.Read())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var sessionId = reader.GetString(ActivityColumn.SessionId);
+
+            if (!string.Equals(currentId, sessionId, StringComparison.Ordinal))
+            {
+                AddSession(sessions, current, chunks);
+                current = MapActivitySession(reader, sessionId);
+                currentId = sessionId;
+                chunks = [];
+            }
+
+            chunks.Add(new SearchChunk(
+                (ChunkKind)reader.GetInt32(ActivityColumn.Kind),
+                reader.GetString(ActivityColumn.Text),
+                DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(ActivityColumn.Timestamp))));
+        }
+
+        AddSession(sessions, current, chunks);
+
+        return sessions;
+    }
+
+    private static void AddSession(List<SessionActivity> sessions, SessionActivity? session, List<SearchChunk> chunks)
+    {
+        if (session is not null)
+        {
+            sessions.Add(session with { Chunks = chunks });
+        }
+    }
+
+    private static SessionActivity MapActivitySession(SqliteDataReader reader, string sessionId)
+    {
+        SessionId.TryParseFromFileName(sessionId, out var parsed);
+
+        return new SessionActivity
+        {
+            SessionId = parsed,
+            Title = new SessionTitle(
+                reader.GetString(ActivityColumn.Title),
+                (TitleSource)reader.GetInt32(ActivityColumn.TitleSource)),
+            Folder = WorkingFolder.From(
+                ReadNullableString(reader, ActivityColumn.FolderDisplay),
+                (FolderSource)reader.GetInt32(ActivityColumn.FolderSource)),
+            GitBranch = ReadNullableString(reader, ActivityColumn.GitBranch),
+        };
     }
 
     private static SqliteCommand CreateRecentSessionsCommand(
@@ -306,6 +406,20 @@ public sealed class SqliteSessionIndexReader(SqliteIndexDatabase database) : ISe
         public const int MatchCount = 12;
     }
 
+    /// <summary>Ordinals of <see cref="Sql.SelectActivity"/>.</summary>
+    private static class ActivityColumn
+    {
+        public const int SessionId = 0;
+        public const int Title = 1;
+        public const int TitleSource = 2;
+        public const int FolderDisplay = 3;
+        public const int FolderSource = 4;
+        public const int GitBranch = 5;
+        public const int Kind = 6;
+        public const int Timestamp = 7;
+        public const int Text = 8;
+    }
+
     private readonly record struct SessionCounters(
         int SessionCount,
         int ParseErrorCount,
@@ -328,6 +442,34 @@ public sealed class SqliteSessionIndexReader(SqliteIndexDatabase database) : ISe
         public const string SelectChunkCountsByKind =
             """
             SELECT kind, count(*) FROM chunks GROUP BY kind ORDER BY kind;
+            """;
+
+        /// <remarks>
+        /// The session's own activity range is tested first so that the search can start from
+        /// <c>ix_sessions_last_activity</c> and reach each session's chunks through
+        /// <c>ix_chunks_session_id_kind</c>. Filtering the chunks by timestamp alone would read the
+        /// whole table, because no index leads with the timestamp, and adding one would mean a new
+        /// schema version and a rebuild for every user.
+        /// </remarks>
+        public const string SelectActivity =
+            """
+            SELECT s.session_id,
+                   s.title,
+                   s.title_source,
+                   s.folder_display,
+                   s.folder_source,
+                   s.git_branch,
+                   c.kind,
+                   c.ts,
+                   c.text
+            FROM sessions s
+            JOIN chunks c ON c.session_id = s.session_id
+            WHERE s.last_activity >= $from
+              AND (s.first_activity IS NULL OR s.first_activity < $to)
+              AND c.kind IN ($user_prompt, $second_kind)
+              AND c.ts >= $from
+              AND c.ts < $to
+            ORDER BY s.session_id, c.ts, c.id;
             """;
 
         public const string SelectMetaValue =

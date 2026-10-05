@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SessionFinder.Mac.Platform;
 using SessionFinder.Mac.Views;
 using SessionFinder.Presentation.Abstractions;
+using SessionFinder.Presentation.Search;
 using SessionFinder.Presentation.Shell;
 
 namespace SessionFinder.Mac.Composition;
@@ -34,6 +35,7 @@ internal sealed class MacShell : IDisposable
     private readonly SingleInstanceGate _gate;
 
     private SettingsWindow? _settingsWindow;
+    private RecapWindow? _recapWindow;
     private bool _isDisposed;
 
     private MacShell(
@@ -96,6 +98,8 @@ internal sealed class MacShell : IDisposable
         _gate.ShowRequested -= OnShowRequested;
         _coordinator.ExitRequested -= OnExitRequested;
         _coordinator.SettingsRequested -= OnSettingsRequested;
+        _coordinator.RecapRequested -= OnRecapRequested;
+        _services.GetRequiredService<SearchViewModel>().RecapRequested -= OnSearchRecapRequested;
 
         _autostart.Dispose();
         _coordinator.Dispose();
@@ -107,6 +111,8 @@ internal sealed class MacShell : IDisposable
     {
         _coordinator.ExitRequested += OnExitRequested;
         _coordinator.SettingsRequested += OnSettingsRequested;
+        _coordinator.RecapRequested += OnRecapRequested;
+        _services.GetRequiredService<SearchViewModel>().RecapRequested += OnSearchRecapRequested;
         _gate.ShowRequested += OnShowRequested;
 
         _coordinator.Start();
@@ -133,6 +139,34 @@ internal sealed class MacShell : IDisposable
         _settingsWindow = _services.GetRequiredService<SettingsWindow>();
         _settingsWindow.Show();
         _settingsWindow.Activate();
+    }
+
+    /// <summary>
+    /// The recap asked for from the search box. The box is topmost and hides when it loses focus,
+    /// so it is put away first rather than left to fight the recap window for the foreground.
+    /// </summary>
+    private void OnSearchRecapRequested(object? sender, EventArgs e)
+    {
+        _coordinator.HideSearch();
+        OnRecapRequested(sender, e);
+    }
+
+    /// <summary>
+    /// Shows the recap window, or brings the one already open back to the front. Both copies would
+    /// be bound to the same view model, so a second one would only ever mirror the first.
+    /// </summary>
+    private void OnRecapRequested(object? sender, EventArgs e)
+    {
+        if (_recapWindow is { } existing && existing.IsVisible)
+        {
+            existing.Activate();
+
+            return;
+        }
+
+        _recapWindow = _services.GetRequiredService<RecapWindow>();
+        _recapWindow.Show();
+        _recapWindow.Activate();
     }
 
     /// <summary>

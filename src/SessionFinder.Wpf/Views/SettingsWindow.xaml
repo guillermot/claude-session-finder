@@ -82,6 +82,23 @@
           <CheckBox IsChecked="{Binding HideOnDeactivate}" Content="Hide the search box when it loses focus" />
           <CheckBox IsChecked="{Binding VerboseLogging}" Content="Verbose logging (Debug level)" />
 
+          <TextBlock Style="{StaticResource SectionHeading}" Text="Daily recap" />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Day starts at (hour, 0–12)" />
+          <TextBox Text="{Binding RecapDayStartHour, UpdateSourceTrigger=LostFocus}" />
+          <TextBlock Style="{StaticResource FieldHint}"
+                     Text="Work done before this hour counts toward the previous day, so a session that runs past midnight is reported with the day it began." />
+
+          <TextBlock Style="{StaticResource FieldLabel}" Text="Earlier days to include (0–14)" />
+          <TextBox Text="{Binding RecapLookbackDays, UpdateSourceTrigger=LostFocus}" />
+          <TextBlock Style="{StaticResource FieldHint}"
+                     Text="Days with activity, not calendar days: a weekend does not use them up." />
+
+          <CheckBox IsChecked="{Binding RecapIncludeGit}" Content="List my git commits from the repositories I worked in" />
+          <CheckBox IsChecked="{Binding RecapAiSummary}" Content="Offer to summarize the recap with Claude" />
+          <TextBlock Style="{StaticResource FieldHint}"
+                     Text="Sends the day's session titles, prompts and commit messages to Claude through your own claude command. Nothing else in the application sends transcript text anywhere." />
+
           <TextBlock Style="{StaticResource SectionHeading}" Text="Programs" />
 
           <TextBlock Style="{StaticResource FieldLabel}" Text="Editor executable" />

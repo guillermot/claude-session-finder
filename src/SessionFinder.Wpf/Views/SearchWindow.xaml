@@ -40,7 +40,7 @@
       <Grid Grid.Row="0">
         <TextBox x:Name="QueryBox"
                  Style="{StaticResource QueryBoxStyle}"
-                 Margin="14,10,14,10"
+                 Margin="14,10,130,10"
                  Text="{Binding Query, UpdateSourceTrigger=PropertyChanged}" />
         <TextBlock Text="Search your sessions…" Margin="18,10,14,10">
           <TextBlock.Style>
@@ -54,6 +54,14 @@
             </Style>
           </TextBlock.Style>
         </TextBlock>
+        <Button Content="Daily recap"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Margin="0,0,10,0"
+                Focusable="False"
+                ToolTip="What you did on your last active day (Ctrl+R)"
+                Style="{StaticResource SecondaryButtonStyle}"
+                Command="{Binding ShowRecapCommand}" />
       </Grid>
 
       <Grid Grid.Row="1" Margin="14,0,14,6">
@@ -144,7 +152,7 @@
           <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
                      FontSize="10"
                      TextWrapping="Wrap"
-                     Text="Enter open in VS Code  ·  Ctrl+Enter resume  ·  Ctrl+Shift+Enter show in Explorer  ·  Ctrl+C copy path  ·  Ctrl+Shift+C copy id  ·  Ctrl+Alt+C copy resume command" />
+                     Text="Enter open in VS Code  ·  Ctrl+Enter resume  ·  Ctrl+Shift+Enter show in Explorer  ·  Ctrl+C copy path  ·  Ctrl+Shift+C copy id  ·  Ctrl+Alt+C copy resume command  ·  Ctrl+R daily recap" />
           <TextBlock Foreground="{StaticResource WarningTextBrush}"
                      FontSize="10"
                      Margin="0,3,0,0"

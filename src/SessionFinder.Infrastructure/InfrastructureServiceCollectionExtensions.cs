@@ -6,6 +6,8 @@ using SessionFinder.Core.Features.Settings;
 using SessionFinder.Infrastructure.FileSystem;
 using SessionFinder.Infrastructure.Indexing;
 using SessionFinder.Infrastructure.Persistence;
+using SessionFinder.Infrastructure.Processes;
+using SessionFinder.Infrastructure.Recap;
 using SessionFinder.Infrastructure.Transcripts;
 
 namespace SessionFinder.Infrastructure;
@@ -38,7 +40,13 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.TryAddSingleton<SqliteIndexDatabase>();
         services.TryAddSingleton<ISessionIndexWriter, SqliteSessionIndexWriter>();
-        services.TryAddSingleton<ISessionIndexReader, SqliteSessionIndexReader>();
+        services.TryAddSingleton<SqliteSessionIndexReader>();
+        services.TryAddSingleton<ISessionIndexReader>(provider => provider.GetRequiredService<SqliteSessionIndexReader>());
+        services.TryAddSingleton<ISessionActivityReader>(provider => provider.GetRequiredService<SqliteSessionIndexReader>());
+
+        services.TryAddSingleton<IProcessRunner, ProcessRunner>();
+        services.TryAddSingleton<IGitActivityReader, GitCliActivityReader>();
+        services.TryAddSingleton<IRecapSummarizer, ClaudeCliRecapSummarizer>();
 
         return services;
     }

@@ -14,6 +14,9 @@ public interface ITrayIcon
     /// <summary>Raised when the user picks the menu entry that opens the search box.</summary>
     event EventHandler? SearchRequested;
 
+    /// <summary>Raised when the user picks the menu entry that shows the daily recap.</summary>
+    event EventHandler? RecapRequested;
+
     /// <summary>Raised when the user picks the menu entry that reads every transcript again.</summary>
     event EventHandler? RebuildIndexRequested;
 
