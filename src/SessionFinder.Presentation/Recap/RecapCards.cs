@@ -181,7 +181,16 @@ public sealed class SessionRowViewModel
     {
         var text = session.Outcome ?? session.KeyPrompts.FirstOrDefault();
 
-        return string.IsNullOrWhiteSpace(text) ? null : PromptText.Truncate(PromptText.Collapse(text), DescriptionLength);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+
+        // The reply is Markdown, and a description is plain text: the marks would show as literal
+        // backticks and asterisks in the middle of a sentence.
+        var plain = PromptText.Collapse(text.Replace("**", string.Empty, StringComparison.Ordinal).Replace("`", string.Empty, StringComparison.Ordinal));
+
+        return PromptText.Truncate(plain, DescriptionLength);
     }
 }
 

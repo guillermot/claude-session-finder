@@ -107,6 +107,7 @@ public sealed class RecapViewModelTests
     [InlineData("Done: invoices now stream.", "the longest prompt", "Done: invoices now stream.")]
     [InlineData(null, "the longest prompt", "the longest prompt")]
     [InlineData(null, null, null)]
+    [InlineData("Behind the `applePay` flag, **done**.", null, "Behind the applePay flag, done.")]
     public void SessionRow_Description_PrefersTheOutcomeAndFallsBackToTheKeyPrompt(string? outcome, string? prompt, string? expected)
     {
         var session = new SessionRecap
