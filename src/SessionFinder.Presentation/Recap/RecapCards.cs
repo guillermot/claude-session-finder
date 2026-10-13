@@ -186,26 +186,43 @@ public sealed class SessionRowViewModel
 public sealed record CommitRowViewModel(string Sha, string Subject, string When);
 
 /// <summary>
-/// One earlier day in the list under the cards, which opens that day when chosen.
+/// One earlier day in the list under the cards. It folds open in place to show what the day
+/// contained, and can also be opened as the focus day.
 /// </summary>
-public sealed class EarlierDayRowViewModel
+/// <remarks>
+/// A day with a lot in it deserves more than a line of project names, but taking the user away from
+/// the day they were reading is a heavier answer than they usually want. Unfolding shows each
+/// project's sessions, described, and its commit messages, right where the line was.
+/// </remarks>
+public sealed partial class EarlierDayRowViewModel : ObservableObject
 {
+    [ObservableProperty]
+    private bool _isExpanded;
+
     /// <summary>
     /// Builds a row.
     /// </summary>
-    /// <param name="day">The day.</param>
-    /// <param name="projects">The projects worked on, joined for display.</param>
-    /// <param name="commitCount">How many commits were made.</param>
-    /// <param name="open">Loads the day.</param>
-    public EarlierDayRowViewModel(DateOnly day, string projects, int commitCount, Func<DateOnly, CancellationToken, Task> open)
+    /// <param name="day">The day's recap.</param>
+    /// <param name="buildRow">Builds a session row with its actions.</param>
+    /// <param name="open">Loads the day as the focus day.</param>
+    public EarlierDayRowViewModel(
+        DayRecap day,
+        Func<SessionRecap, SessionRowViewModel> buildRow,
+        Func<DateOnly, CancellationToken, Task> open)
     {
+        ArgumentNullException.ThrowIfNull(day);
+        ArgumentNullException.ThrowIfNull(buildRow);
         ArgumentNullException.ThrowIfNull(open);
 
-        Day = day;
-        DayLabel = RecapTextFormatter.FormatDay(day);
-        Projects = projects;
-        CommitsText = commitCount > 0 ? RecapTextFormatter.Count(commitCount, "commit") : string.Empty;
-        OpenCommand = new AsyncRelayCommand(token => open(day, token));
+        Day = day.Day;
+        DayLabel = RecapTextFormatter.FormatDay(day.Day);
+        Projects = string.Join(", ", day.Projects.Select(project => project.Name));
+
+        var commits = day.Projects.Sum(project => project.Commits.Count);
+        CommitsText = commits > 0 ? RecapTextFormatter.Count(commits, "commit") : string.Empty;
+
+        Details = [.. day.Projects.Select(project => new EarlierProjectViewModel(project, buildRow))];
+        OpenCommand = new AsyncRelayCommand(token => open(day.Day, token));
     }
 
     /// <summary>The day.</summary>
@@ -220,6 +237,66 @@ public sealed class EarlierDayRowViewModel
     /// <summary>How many commits were made, or empty when there were none.</summary>
     public string CommitsText { get; }
 
-    /// <summary>Loads the day in the window.</summary>
+    /// <summary>What each project amounted to that day, shown when the row is unfolded.</summary>
+    public IReadOnlyList<EarlierProjectViewModel> Details { get; }
+
+    /// <summary>Loads the day in the window as the focus day.</summary>
     public IAsyncRelayCommand OpenCommand { get; }
+
+    /// <summary>Folds or unfolds the day's details.</summary>
+    [RelayCommand]
+    public void Toggle() => IsExpanded = !IsExpanded;
+}
+
+/// <summary>
+/// One project's part of an earlier day, as shown when the day is unfolded.
+/// </summary>
+public sealed class EarlierProjectViewModel
+{
+    /// <summary>
+    /// Builds the project's details.
+    /// </summary>
+    /// <param name="project">The project's recap for the day.</param>
+    /// <param name="buildRow">Builds a session row with its actions.</param>
+    public EarlierProjectViewModel(ProjectRecap project, Func<SessionRecap, SessionRowViewModel> buildRow)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(buildRow);
+
+        Name = project.Name;
+        Branches = string.Join(", ", project.Branches);
+        Sessions = [.. project.Sessions.Where(session => !session.IsQuick).Select(buildRow)];
+        Commits = [.. project.Commits.Select(commit => commit.Subject)];
+
+        var quick = project.Sessions.Count(session => session.IsQuick);
+        var parts = new List<string> { RecapTextFormatter.FormatSpan(project.FirstActivity, project.LastActivity).Replace("–", " – ", StringComparison.Ordinal) };
+
+        if (quick > 0)
+        {
+            parts.Add(RecapTextFormatter.Count(quick, "quick question"));
+        }
+
+        Summary = string.Join(" · ", parts);
+    }
+
+    /// <summary>The project name.</summary>
+    public string Name { get; }
+
+    /// <summary>The branches worked on, joined for display, or empty.</summary>
+    public string Branches { get; }
+
+    /// <summary>Whether there is a branch to show.</summary>
+    public bool HasBranches => Branches.Length > 0;
+
+    /// <summary>When the work happened, and how many quick questions were folded away.</summary>
+    public string Summary { get; }
+
+    /// <summary>The sessions that were real work, each with its description and actions.</summary>
+    public IReadOnlyList<SessionRowViewModel> Sessions { get; }
+
+    /// <summary>The commit messages.</summary>
+    public IReadOnlyList<string> Commits { get; }
+
+    /// <summary>Whether there are commits to list.</summary>
+    public bool HasCommits => Commits.Count > 0;
 }

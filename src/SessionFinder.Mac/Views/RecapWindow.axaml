@@ -217,18 +217,75 @@
                 <DataTemplate x:DataType="recap:EarlierDayRowViewModel">
                   <StackPanel>
                     <Border Classes="separator leading" />
-                    <Button Classes="row" Command="{Binding OpenCommand}">
-                      <Grid ColumnDefinitions="96,*,Auto,Auto">
-                        <TextBlock Grid.Column="0" Classes="body" FontWeight="Medium" Text="{Binding DayLabel}"
-                                   VerticalAlignment="Center" />
-                        <TextBlock Grid.Column="1" Classes="secondary" Text="{Binding Projects}"
-                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding CommitsText}"
-                                   VerticalAlignment="Center" Margin="12,0,10,0" />
-                        <TextBlock Grid.Column="3" Classes="tertiary" Text="›" FontSize="15"
-                                   VerticalAlignment="Center" />
-                      </Grid>
-                    </Button>
+                    <Grid ColumnDefinitions="*,Auto">
+                      <Button Grid.Column="0" Classes="row" Command="{Binding ToggleCommand}">
+                        <Grid ColumnDefinitions="Auto,96,*,Auto">
+                          <TextBlock Grid.Column="0" Classes="tertiary" Text="›" Width="14" FontSize="14"
+                                     VerticalAlignment="Center" IsVisible="{Binding !IsExpanded}" />
+                          <TextBlock Grid.Column="0" Classes="tertiary" Text="⌄" Width="14" FontSize="14"
+                                     VerticalAlignment="Center" IsVisible="{Binding IsExpanded}" />
+                          <TextBlock Grid.Column="1" Classes="body" FontWeight="Medium" Text="{Binding DayLabel}"
+                                     VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="2" Classes="secondary" Text="{Binding Projects}"
+                                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Grid.Column="3" Classes="tertiary" Text="{Binding CommitsText}"
+                                     VerticalAlignment="Center" Margin="12,0,0,0" />
+                        </Grid>
+                      </Button>
+                      <Button Grid.Column="1" Classes="icon" Content="Open" FontSize="12" Margin="0,0,10,0"
+                              ToolTip.Tip="Show this day in full" Command="{Binding OpenCommand}" />
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding Details}" IsVisible="{Binding IsExpanded}" Margin="28,0,0,10">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="recap:EarlierProjectViewModel">
+                          <StackPanel Margin="0,6,0,0">
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4,14,2">
+                              <TextBlock Grid.Column="0" Classes="body" FontWeight="SemiBold" Text="{Binding Name}" />
+                              <TextBlock Grid.Column="1" Classes="tertiary mono" Text="{Binding Branches}" Margin="8,1,0,0"
+                                         TextTrimming="CharacterEllipsis" IsVisible="{Binding HasBranches}" />
+                              <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding Summary}" Margin="12,1,0,0" />
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding Sessions}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="recap:SessionRowViewModel">
+                                  <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,5,8,5">
+                                    <StackPanel Grid.Column="0">
+                                      <TextBlock Classes="body" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                      <TextBlock Classes="caption" Text="{Binding Description}" Margin="0,3,0,0"
+                                                 MaxLines="4" TextTrimming="CharacterEllipsis" LineHeight="16"
+                                                 IsVisible="{Binding HasDescription}" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Classes="tertiary" Text="{Binding PromptCountText}"
+                                               VerticalAlignment="Top" Margin="12,1,6,0" ToolTip.Tip="Prompts" />
+                                    <Button Grid.Column="2" Classes="icon" Content="⋯" VerticalAlignment="Top"
+                                            ToolTip.Tip="Session actions" IsEnabled="{Binding CanActOnFolder}">
+                                      <Button.Flyout>
+                                        <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                          <MenuItem Header="Resume in Terminal" Command="{Binding ResumeCommand}" />
+                                          <MenuItem Header="Open Folder in Editor" Command="{Binding OpenFolderCommand}" />
+                                          <MenuItem Header="Reveal in Finder" Command="{Binding RevealCommand}" />
+                                        </MenuFlyout>
+                                      </Button.Flyout>
+                                    </Button>
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding Commits}" IsVisible="{Binding HasCommits}" Margin="0,2,14,0">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                  <Grid ColumnDefinitions="Auto,*" Margin="0,2">
+                                    <TextBlock Classes="tertiary" Text="✓" Margin="0,0,8,0" />
+                                    <TextBlock Grid.Column="1" Classes="secondary" FontSize="12" Text="{Binding}" TextWrapping="Wrap" />
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                   </StackPanel>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>

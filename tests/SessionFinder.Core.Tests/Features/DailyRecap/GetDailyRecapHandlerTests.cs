@@ -205,14 +205,31 @@ public sealed class GetDailyRecapHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_AssistantText_IsOnlyReadForTheFocusDay()
+    public async Task HandleAsync_AssistantText_IsReadOnceForTheDaysShown()
     {
         _activity.Add(Session("A", Repository, Prompt(At(10, 2, 10), "work")));
+        _activity.Add(Session("B", Repository, Prompt(At(10, 1, 10), "earlier work")));
 
         await HandleAsync();
 
         _activity.Calls.Where(call => call.IncludeAssistantText).Should().ContainSingle()
-            .Which.From.Should().Be(At(10, 2, RecapOptions.DefaultDayStartHour));
+            .Which.Should().Match<(DateTimeOffset From, DateTimeOffset To, bool IncludeAssistantText)>(call =>
+                call.From == At(10, 1, RecapOptions.DefaultDayStartHour) && call.To == At(10, 3, RecapOptions.DefaultDayStartHour));
+    }
+
+    [Fact]
+    public async Task HandleAsync_AnEarlierDay_CarriesTheAssistantsLastReplyToo()
+    {
+        _activity.Add(Session("Focus", Repository, Prompt(At(10, 2, 10), "work")));
+        _activity.Add(Session(
+            "Earlier",
+            Repository,
+            Prompt(At(10, 1, 10), "add retries"),
+            Reply(At(10, 1, 10, 30), "Retries now back off exponentially.")));
+
+        var recap = await HandleAsync();
+
+        recap.Earlier.Single().Projects.Single().Sessions.Single().Outcome.Should().Be("Retries now back off exponentially.");
     }
 
     [Fact]

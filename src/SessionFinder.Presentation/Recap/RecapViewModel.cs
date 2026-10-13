@@ -411,9 +411,8 @@ public sealed partial class RecapViewModel : ObservableObject
         [.. project.Commits.Select(entry => new CommitRowViewModel(entry.Commit.Sha, entry.Commit.Subject, WeekDay(entry.Day)))]);
 
     private EarlierDayRowViewModel BuildEarlierDay(DayRecap day) => new(
-        day.Day,
-        string.Join(", ", day.Projects.Select(project => project.Name)),
-        day.Projects.Sum(project => project.Commits.Count),
+        day,
+        session => BuildRow(session, dayLabel: null),
         (target, token) => LoadDayAsync(GetDailyRecapQuery.For(target), token));
 
     private SessionRowViewModel BuildRow(SessionRecap session, string? dayLabel) => new(

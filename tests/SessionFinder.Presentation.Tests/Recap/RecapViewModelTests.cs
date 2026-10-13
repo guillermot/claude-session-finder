@@ -139,6 +139,24 @@ public sealed class RecapViewModelTests
     }
 
     [Fact]
+    public async Task EarlierDay_Unfolded_ShowsEachProjectsSessionsAndCommitMessages()
+    {
+        var viewModel = ViewModel();
+        await viewModel.LoadAsync(CancellationToken.None);
+        var row = viewModel.EarlierDays.Single();
+
+        row.IsExpanded.Should().BeFalse();
+        row.ToggleCommand.Execute(null);
+
+        row.IsExpanded.Should().BeTrue();
+        var project = row.Details.Should().ContainSingle().Subject;
+        project.Name.Should().Be("docs");
+        project.Sessions.Select(session => session.Title).Should().Equal("Migration guide");
+        project.Summary.Should().Be("10:00 – 12:00 · 1 quick question");
+        project.Commits.Should().Equal("Commit on Migration guide");
+    }
+
+    [Fact]
     public async Task ToggleWeek_RollsTheDaysUpByProjectWithoutGoingBackToTheIndex()
     {
         var viewModel = ViewModel();

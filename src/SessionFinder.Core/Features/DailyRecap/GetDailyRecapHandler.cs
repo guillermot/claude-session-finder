@@ -21,8 +21,10 @@ namespace SessionFinder.Core.Features.DailyRecap;
 /// from a long break pays for a wider read, and the widest one is still bounded.
 /// </para>
 /// <para>
-/// Assistant text is read for the focus day alone. It is most of the bytes in a transcript, the
-/// structured recap never shows it, and the summary only describes the focus day in detail.
+/// Assistant text is read once, for the days the recap shows, and only after those days are known.
+/// It is most of the bytes in a transcript, so the search for active days never reads it; but the
+/// assistant's last word on a session is the best account of what the session achieved, and every
+/// day on the recap can be unfolded to show it.
 /// </para>
 /// </remarks>
 public sealed class GetDailyRecapHandler(
@@ -62,12 +64,12 @@ public sealed class GetDailyRecapHandler(
 
         var earlierDays = scan.Days.Keys.Where(day => day < focus).OrderDescending().ToList();
 
-        var days = new List<(DateOnly Day, IReadOnlyList<SessionActivity> Sessions)>
-        {
-            (focus, await ReadFocusDayAsync(calendar, focus, scan, cancellationToken).ConfigureAwait(false)),
-        };
+        var shownDays = earlierDays.Take(lookback).Prepend(focus).ToList();
+        var detailed = await ReadShownDaysAsync(calendar, shownDays, scan, cancellationToken).ConfigureAwait(false);
 
-        days.AddRange(earlierDays.Take(lookback).Select(day => (day, (IReadOnlyList<SessionActivity>)scan.Days[day])));
+        var days = shownDays
+            .Select(day => (Day: day, Sessions: detailed.TryGetValue(day, out var sessions) ? (IReadOnlyList<SessionActivity>)sessions : []))
+            .ToList();
 
         var directory = await ProjectDirectory
             .BuildAsync(gitReader, calendar, days, includeGit, cancellationToken)
@@ -126,26 +128,32 @@ public sealed class GetDailyRecapHandler(
         return new ActivityScan(focus, days);
     }
 
-    private async Task<IReadOnlyList<SessionActivity>> ReadFocusDayAsync(
+    /// <summary>
+    /// Reads the days the recap shows again, this time with assistant text, in one query spanning
+    /// from the oldest of them to the end of the focus day.
+    /// </summary>
+    private async Task<Dictionary<DateOnly, List<SessionActivity>>> ReadShownDaysAsync(
         RecapCalendar calendar,
-        DateOnly focus,
+        List<DateOnly> shownDays,
         ActivityScan scan,
         CancellationToken cancellationToken)
     {
-        if (!scan.Days.ContainsKey(focus))
+        var active = shownDays.Where(scan.Days.ContainsKey).ToList();
+
+        if (active.Count == 0)
         {
             return [];
         }
 
         var sessions = await activityReader
             .GetActivityAsync(
-                calendar.StartOf(focus),
-                calendar.StartOf(focus.AddDays(1)),
+                calendar.StartOf(active.Min()),
+                calendar.StartOf(active.Max().AddDays(1)),
                 includeAssistantText: true,
                 cancellationToken)
             .ConfigureAwait(false);
 
-        return SplitByDay(sessions, calendar).TryGetValue(focus, out var found) ? found : [];
+        return SplitByDay(sessions, calendar);
     }
 
     private async Task<DateOnly?> FindNextActiveDayAsync(

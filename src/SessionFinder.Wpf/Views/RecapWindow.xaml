@@ -185,24 +185,103 @@
                 <DataTemplate DataType="{x:Type recap:EarlierDayRowViewModel}">
                   <StackPanel>
                     <Border x:Name="Lead" Style="{StaticResource SeparatorStyle}" Margin="16,0,0,0" />
-                    <Button Style="{StaticResource RowButtonStyle}" Command="{Binding OpenCommand}">
-                      <Grid>
-                        <Grid.ColumnDefinitions>
-                          <ColumnDefinition Width="104" />
-                          <ColumnDefinition Width="*" />
-                          <ColumnDefinition Width="Auto" />
-                          <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" Text="{Binding DayLabel}" />
-                        <TextBlock Grid.Column="1" Style="{StaticResource SecondaryTextStyle}" Text="{Binding Projects}" />
-                        <TextBlock Grid.Column="2" Style="{StaticResource TertiaryTextStyle}" Text="{Binding CommitsText}" Margin="12,0,10,0" />
-                        <TextBlock Grid.Column="3" Style="{StaticResource TertiaryTextStyle}" Text="›" FontSize="16" />
-                      </Grid>
-                    </Button>
+                    <Grid>
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                      </Grid.ColumnDefinitions>
+                      <Button Grid.Column="0" Style="{StaticResource RowButtonStyle}" Command="{Binding ToggleCommand}">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="104" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <TextBlock x:Name="Chevron" Grid.Column="0" Style="{StaticResource TertiaryTextStyle}" Text="›" FontSize="15" />
+                          <TextBlock Grid.Column="1" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" Text="{Binding DayLabel}" />
+                          <TextBlock Grid.Column="2" Style="{StaticResource SecondaryTextStyle}" Text="{Binding Projects}" />
+                          <TextBlock Grid.Column="3" Style="{StaticResource TertiaryTextStyle}" Text="{Binding CommitsText}" Margin="12,0,0,0" />
+                        </Grid>
+                      </Button>
+                      <Button Grid.Column="1" Content="Open" ToolTip="Show this day in full" Margin="0,0,10,0"
+                              Style="{StaticResource IconButtonStyle}" Command="{Binding OpenCommand}" />
+                    </Grid>
+
+                    <ItemsControl ItemsSource="{Binding Details}" Focusable="False" Margin="34,0,0,10"
+                                  Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibility}}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type recap:EarlierProjectViewModel}">
+                          <StackPanel Margin="0,6,0,0">
+                            <Grid Margin="0,4,16,2">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="0" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" Text="{Binding Name}" />
+                              <TextBlock Grid.Column="1" Style="{StaticResource TertiaryTextStyle}" Text="{Binding Branches}"
+                                         FontFamily="{StaticResource MonospaceFont}" Margin="8,0,0,0"
+                                         Visibility="{Binding HasBranches, Converter={StaticResource BooleanToVisibility}}" />
+                              <TextBlock Grid.Column="2" Style="{StaticResource TertiaryTextStyle}" Text="{Binding Summary}" Margin="12,0,0,0" />
+                            </Grid>
+                            <ItemsControl ItemsSource="{Binding Sessions}" Focusable="False">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type recap:SessionRowViewModel}">
+                                  <Grid Margin="0,5,8,5">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="*" />
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                      <TextBlock Style="{StaticResource BodyTextStyle}" Text="{Binding Title}" />
+                                      <TextBlock Style="{StaticResource CaptionTextStyle}" Text="{Binding Description}" Margin="0,2,0,0"
+                                                 MaxHeight="68" TextTrimming="CharacterEllipsis"
+                                                 Visibility="{Binding HasDescription, Converter={StaticResource BooleanToVisibility}}" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Style="{StaticResource TertiaryTextStyle}" Text="{Binding PromptCountText}"
+                                               VerticalAlignment="Top" Margin="12,2,6,0" ToolTip="Prompts" />
+                                    <Button Grid.Column="2" Content="⋯" ToolTip="Session actions" VerticalAlignment="Top"
+                                            Style="{StaticResource IconButtonStyle}" IsEnabled="{Binding CanActOnFolder}" Click="OnMenuButtonClick">
+                                      <Button.ContextMenu>
+                                        <ContextMenu>
+                                          <MenuItem Header="Resume in terminal" Command="{Binding ResumeCommand}" />
+                                          <MenuItem Header="Open folder in editor" Command="{Binding OpenFolderCommand}" />
+                                          <MenuItem Header="Show in Explorer" Command="{Binding RevealCommand}" />
+                                        </ContextMenu>
+                                      </Button.ContextMenu>
+                                    </Button>
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <ItemsControl ItemsSource="{Binding Commits}" Focusable="False" Margin="0,2,16,0"
+                                          Visibility="{Binding HasCommits, Converter={StaticResource BooleanToVisibility}}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                  <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions>
+                                      <ColumnDefinition Width="Auto" />
+                                      <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource TertiaryTextStyle}" Text="✓" Margin="0,0,8,0" VerticalAlignment="Top" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource CaptionTextStyle}" Text="{Binding}" />
+                                  </Grid>
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                   </StackPanel>
                   <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}" Value="0">
                       <Setter TargetName="Lead" Property="Visibility" Value="Collapsed" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                      <Setter TargetName="Chevron" Property="Text" Value="⌄" />
                     </DataTrigger>
                   </DataTemplate.Triggers>
                 </DataTemplate>
