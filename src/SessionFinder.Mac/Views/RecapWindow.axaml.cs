@@ -12,7 +12,8 @@ using SessionFinder.Presentation.Recap;
 namespace SessionFinder.Mac.Views;
 
 /// <summary>
-/// The daily recap: one working day, laid out as a short document, ready to copy into a stand-up.
+/// The daily recap: titled cards for a day or a week, laid out the way System Settings lays out
+/// grouped content, ready to copy into a stand-up.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -20,25 +21,20 @@ namespace SessionFinder.Mac.Views;
 /// opened once a day, and what it shows has to be the index as it is at that moment.
 /// </para>
 /// <para>
-/// The view model speaks Markdown, because that is what is copied. The window lays each line out by
-/// the role it plays — a section divider, a day, a project, a session or commit — through the same
-/// parser the Windows head uses, so the two draw the same recap the same way.
+/// The cards are plain data templates over the view model. The one thing drawn here in code is the
+/// summary, which arrives as Markdown from Claude and is laid out through the same small parser the
+/// Windows head uses.
 /// </para>
 /// <para>
-/// The arrow keys step between days. They are taken in the tunnelling phase so that a focused
-/// button or a text selection never gets to treat them as navigation of its own.
+/// The keys are taken in the tunnelling phase so that a focused button or a text selection never
+/// gets to treat them as navigation of its own.
 /// </para>
 /// </remarks>
 internal sealed partial class RecapWindow : Window
 {
-    private const double ItemIndent = 16;
     private const double BulletWidth = 14;
     private const double BodySize = 13;
-    private const double SmallSize = 12;
-    private const double HeadingSize = 15;
-    private const double ProjectSize = 14;
-    private const double SectionSize = 11;
-    private static readonly FontFamily CodeFont = new("Menlo, Monaco, monospace");
+    private const double HeadingSize = 13;
 
     private readonly RecapViewModel _viewModel;
 
@@ -62,7 +58,7 @@ internal sealed partial class RecapWindow : Window
         viewModel.PropertyChanged += OnViewModelChanged;
         AddHandler(KeyDownEvent, OnPreviewKeyDown, RoutingStrategies.Tunnel);
 
-        Render();
+        RenderSummary();
     }
 
     /// <summary>
@@ -89,6 +85,7 @@ internal sealed partial class RecapWindow : Window
         {
             Key.Left => Run(_viewModel.PreviousDayCommand),
             Key.Right => Run(_viewModel.NextDayCommand),
+            Key.W => Run(_viewModel.ToggleWeekCommand),
             Key.Enter => Run(_viewModel.CopyCommand),
             Key.Escape => CloseWindow(),
             _ => false,
@@ -113,101 +110,74 @@ internal sealed partial class RecapWindow : Window
 
     private void OnViewModelChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(RecapViewModel.DisplayBody))
+        if (e.PropertyName is nameof(RecapViewModel.SummaryText) or nameof(RecapViewModel.IsShowingSummary))
         {
-            Render();
+            RenderSummary();
         }
     }
 
-    private void Render()
+    private void RenderSummary()
     {
-        Document.Children.Clear();
+        SummaryDocument.Children.Clear();
+
+        if (_viewModel.SummaryText is not { } summary)
+        {
+            return;
+        }
 
         var isFirst = true;
 
-        foreach (var line in MarkdownLines.Parse(_viewModel.DisplayBody))
+        foreach (var line in MarkdownLines.Parse(summary))
         {
             if (line.Role == RecapLineRole.Blank)
             {
                 continue;
             }
 
-            Document.Children.Add(BuildLine(line, isFirst));
+            SummaryDocument.Children.Add(BuildLine(line, isFirst));
             isFirst = false;
         }
     }
 
-    private Control BuildLine(MarkdownLine line, bool isFirst) => line.Role switch
+    private Control BuildLine(MarkdownLine line, bool isFirst)
     {
-        RecapLineRole.Section => BuildSection(line, isFirst),
-        RecapLineRole.Heading => Text(line, HeadingSize, FontWeight.SemiBold, top: isFirst ? 0 : 14, bottom: 4),
-        RecapLineRole.Project => BuildProject(line, isFirst),
-        RecapLineRole.Item => BuildItem(line),
-        _ => Text(line, BodySize, FontWeight.Normal, top: 2, bottom: 2, foreground: "SecondaryTextBrush"),
-    };
-
-    /// <summary>A small capitalised label over a hairline, which is what separates the earlier days.</summary>
-    private StackPanel BuildSection(MarkdownLine line, bool isFirst)
-    {
-        var label = new TextBlock
+        var text = new SelectableTextBlock
         {
-            Text = string.Concat(line.Spans.Select(span => span.Text)).ToUpperInvariant(),
-            FontSize = SectionSize,
-            FontWeight = FontWeight.SemiBold,
-            LetterSpacing = 1.2,
-            Foreground = Brush("SecondaryTextBrush"),
-            Margin = new Thickness(0, 10, 0, 0),
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = line.Role is RecapLineRole.Heading or RecapLineRole.Section ? HeadingSize : BodySize,
+            FontWeight = line.Role is RecapLineRole.Heading or RecapLineRole.Section ? FontWeight.SemiBold : FontWeight.Normal,
+            LineHeight = 19,
+            Foreground = Brush("PrimaryTextBrush"),
+            Margin = new Thickness(0, line.IsHeading && !isFirst ? 12 : 2, 0, 2),
         };
 
-        return new StackPanel
+        foreach (var span in line.Spans)
         {
-            Margin = new Thickness(0, isFirst ? 0 : 18, 0, 2),
-            Children =
+            var run = new Run(span.Text);
+
+            if (span.IsBold)
             {
-                new Border { Height = 1, Background = Brush("SurfaceEdgeBrush") },
-                label,
-            },
-        };
-    }
-
-    /// <summary>
-    /// The project name in its own weight, with the branch, session count and time span after it in
-    /// the secondary colour: the name is what a listener catches, the rest is for whoever reads.
-    /// </summary>
-    private SelectableTextBlock BuildProject(MarkdownLine line, bool isFirst)
-    {
-        var text = NewBlock(top: isFirst ? 0 : 14, bottom: 4);
-
-        for (var index = 0; index < line.Spans.Count; index++)
-        {
-            var span = line.Spans[index];
-            var run = BuildRun(span);
-
-            if (index == 0)
-            {
-                run.FontSize = ProjectSize;
                 run.FontWeight = FontWeight.SemiBold;
             }
-            else if (!span.IsCode)
+
+            if (span.IsCode && this.TryFindResource("MonospaceFont", out var font) && font is FontFamily family)
             {
-                run.FontSize = SmallSize;
-                run.Foreground = Brush("SecondaryTextBrush");
+                run.FontFamily = family;
             }
 
             text.Inlines!.Add(run);
         }
 
-        return text;
-    }
-
-    private Grid BuildItem(MarkdownLine line)
-    {
-        var text = NewBlock(top: 2, bottom: 2);
-
-        foreach (var span in line.Spans)
+        if (!line.IsBullet)
         {
-            text.Inlines!.Add(BuildRun(span));
+            return text;
         }
+
+        var row = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            Margin = new Thickness(line.Indent * BulletWidth, 0, 0, 0),
+        };
 
         var bullet = new TextBlock
         {
@@ -219,12 +189,6 @@ internal sealed partial class RecapWindow : Window
             VerticalAlignment = VerticalAlignment.Top,
         };
 
-        var row = new Grid
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
-            Margin = new Thickness(Math.Max(0, line.Indent - 1) * ItemIndent, 0, 0, 0),
-        };
-
         Grid.SetColumn(text, 1);
         row.Children.Add(bullet);
         row.Children.Add(text);
@@ -232,55 +196,6 @@ internal sealed partial class RecapWindow : Window
         return row;
     }
 
-    private SelectableTextBlock Text(
-        MarkdownLine line,
-        double size,
-        FontWeight weight,
-        double top,
-        double bottom,
-        string foreground = "PrimaryTextBrush")
-    {
-        var text = NewBlock(top, bottom);
-        text.FontSize = size;
-        text.FontWeight = weight;
-        text.Foreground = Brush(foreground);
-
-        foreach (var span in line.Spans)
-        {
-            text.Inlines!.Add(BuildRun(span));
-        }
-
-        return text;
-    }
-
-    private SelectableTextBlock NewBlock(double top, double bottom) => new()
-    {
-        TextWrapping = TextWrapping.Wrap,
-        FontSize = BodySize,
-        LineHeight = 20,
-        Foreground = Brush("PrimaryTextBrush"),
-        Margin = new Thickness(0, top, 0, bottom),
-    };
-
-    private Run BuildRun(MarkdownSpan span)
-    {
-        var run = new Run(span.Text);
-
-        if (span.IsBold)
-        {
-            run.FontWeight = FontWeight.SemiBold;
-        }
-
-        if (span.IsCode)
-        {
-            run.FontFamily = CodeFont;
-            run.FontSize = SmallSize;
-            run.Foreground = Brush("AccentTextBrush");
-        }
-
-        return run;
-    }
-
     private IBrush? Brush(string key) =>
-        this.TryFindResource(key, out var value) ? value as IBrush : null;
+        this.TryFindResource(key, ActualThemeVariant, out var value) ? value as IBrush : null;
 }

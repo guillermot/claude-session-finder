@@ -216,6 +216,16 @@ public sealed class GetDailyRecapHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_ASession_CarriesItsFolderSoItCanBeResumed()
+    {
+        _activity.Add(Session("A", Repository, Prompt(At(10, 2, 10), "work")));
+
+        var recap = await HandleAsync();
+
+        recap.Focus!.Projects.Single().Sessions.Single().Folder.Display.Should().Be(Repository);
+    }
+
+    [Fact]
     public async Task HandleAsync_TimesOnTheRecap_AreInTheUsersTimeZone()
     {
         _activity.Add(Session("A", Repository, Prompt(At(10, 2, 10, 15), "work")));

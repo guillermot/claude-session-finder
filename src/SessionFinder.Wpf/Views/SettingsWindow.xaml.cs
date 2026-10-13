@@ -1,7 +1,5 @@
 using System.Windows;
-using Microsoft.Extensions.Logging;
 using SessionFinder.Presentation.Settings;
-using SessionFinder.Wpf.Platform;
 
 namespace SessionFinder.Wpf.Views;
 
@@ -20,27 +18,23 @@ namespace SessionFinder.Wpf.Views;
 /// in the file by hand since the last time is shown rather than overwritten.
 /// </para>
 /// <para>
-/// The title bar is the one part of it this application does not draw, so it is asked for in dark
-/// rather than restyled. Everything below it comes from the same palette as the search box.
+/// The title bar and the controls are the Fluent theme's, which follow the system appearance by
+/// themselves; the cards take their colours from the same palette as the search box.
 /// </para>
 /// </remarks>
 internal partial class SettingsWindow : Window
 {
     private readonly SettingsViewModel _viewModel;
-    private readonly ILogger<SettingsWindow> _logger;
 
     /// <summary>
     /// Builds the window and binds it to the settings view model.
     /// </summary>
     /// <param name="viewModel">What the window shows.</param>
-    /// <param name="logger">Where a title bar that could not be darkened is recorded.</param>
-    public SettingsWindow(SettingsViewModel viewModel, ILogger<SettingsWindow> logger)
+    public SettingsWindow(SettingsViewModel viewModel)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
-        ArgumentNullException.ThrowIfNull(logger);
 
         _viewModel = viewModel;
-        _logger = logger;
 
         InitializeComponent();
 
@@ -50,21 +44,6 @@ internal partial class SettingsWindow : Window
         Closed += OnClosed;
 
         viewModel.Saved += OnSaved;
-    }
-
-    /// <summary>
-    /// Darkens the native chrome at the first moment the window has a handle, which is before it is
-    /// painted; asking any later shows a light bar that repaints only when the window is resized.
-    /// </summary>
-    /// <param name="e">Ignored.</param>
-    protected override void OnSourceInitialized(EventArgs e)
-    {
-        base.OnSourceInitialized(e);
-
-        if (!ImmersiveDarkTitleBar.TryApply(this))
-        {
-            DarkTitleBarLog.Unavailable(_logger);
-        }
     }
 
     /// <summary>

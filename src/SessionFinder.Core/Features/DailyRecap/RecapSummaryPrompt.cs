@@ -51,14 +51,14 @@ public static class RecapSummaryPrompt
 
         if (recap.Focus is { } day)
         {
-            Line(builder, $"Focus day: {RecapMarkdownFormatter.DescribeDay(day.Day, recap.Today)}");
+            Line(builder, $"Focus day: {RecapTextFormatter.DescribeDay(day.Day, recap.Today)}");
             AppendFocusDay(builder, day);
         }
 
         foreach (var earlier in recap.Earlier)
         {
             Line(builder, string.Empty);
-            Line(builder, $"Earlier day: {RecapMarkdownFormatter.FormatDay(earlier.Day)}");
+            Line(builder, $"Earlier day: {RecapTextFormatter.FormatDay(earlier.Day)}");
             AppendEarlierDay(builder, earlier);
         }
 
@@ -91,7 +91,7 @@ public static class RecapSummaryPrompt
 
             Line(builder, $"Project {project.Name}{branches}");
 
-            foreach (var session in project.Sessions)
+            foreach (var session in project.Sessions.Where(session => !session.IsQuick))
             {
                 Line(builder, $"- Session \"{session.Title}\", {session.PromptCount} prompt(s), {Time(session.FirstActivity)}–{Time(session.LastActivity)}");
 
@@ -106,6 +106,13 @@ public static class RecapSummaryPrompt
                 }
             }
 
+            var quick = project.Sessions.Count(session => session.IsQuick);
+
+            if (quick > 0)
+            {
+                Line(builder, $"- Plus {quick} quick question(s), too small to mention on their own");
+            }
+
             foreach (var commit in project.Commits)
             {
                 Line(builder, $"- Commit {commit.Sha}: {commit.Subject}");
@@ -117,7 +124,9 @@ public static class RecapSummaryPrompt
     {
         foreach (var project in day.Projects)
         {
-            var titles = string.Join("; ", project.Sessions.Select(session => session.Title).Distinct(StringComparer.Ordinal));
+            var titles = string.Join(
+                "; ",
+                project.Sessions.Where(session => !session.IsQuick).Select(session => session.Title).Distinct(StringComparer.Ordinal));
 
             Line(builder, $"- Project {project.Name}: {titles}");
 

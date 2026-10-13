@@ -18,7 +18,7 @@ public static class CliCommandCatalog
         new("status", "status", "Print index counters, parse errors, database size and last run time."),
         new(
             "recap",
-            "recap [--date <day>] [--days <n>] [--no-git] [--prompts] [--summarize]",
+            "recap [--date <day>] [--days <n>] [--week] [--format slack|plain|markdown] [--no-git] [--prompts] [--summarize]",
             "Print what you did on your last active day, and the days before it, for a stand-up."),
     ];
 

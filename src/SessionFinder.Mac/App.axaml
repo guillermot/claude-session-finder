@@ -2,46 +2,83 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SessionFinder.Mac.App"
              Name="Claude Session Finder"
-             RequestedThemeVariant="Dark">
+             RequestedThemeVariant="Default">
 
   <!--
     No MainWindow: the window is created by the composition root and shown by the shell, because a
     launcher that is hidden most of the time must not put a window on screen when it starts.
 
-    The palette is the Windows head's, value for value. The two builds are the same application and
-    a user moving between them should not have to notice which one they are looking at.
+    The theme follows the system. Every colour is defined twice, once per appearance, under the
+    names the views already use, and the views look them up dynamically, so switching macOS between
+    light and dark repaints every open window without a restart. The values follow AppKit's own
+    semantic colours — window background, grouped content, label levels, separators — and the
+    accent is the one the user picked in System Settings rather than a blue of our choosing.
+
+    The font is the system font. Nothing here names a family, which is what lets San Francisco
+    through, with the sizes macOS uses for its own text styles.
   -->
   <Application.Resources>
-    <SolidColorBrush x:Key="SurfaceBrush" Color="#FF1E1F22" />
-    <SolidColorBrush x:Key="SurfaceEdgeBrush" Color="#FF3A3D42" />
-    <SolidColorBrush x:Key="FieldSurfaceBrush" Color="#FF17181A" />
-    <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFECEDEE" />
-    <SolidColorBrush x:Key="SecondaryTextBrush" Color="#FF9BA1A8" />
-    <SolidColorBrush x:Key="AccentTextBrush" Color="#FF7FB2F0" />
-    <SolidColorBrush x:Key="SelectionBrush" Color="#FF2D4F7C" />
-    <SolidColorBrush x:Key="HoverBrush" Color="#FF26282C" />
-    <SolidColorBrush x:Key="ErrorTextBrush" Color="#FFE0796C" />
-    <SolidColorBrush x:Key="WarningTextBrush" Color="#FFE0A96C" />
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#FFECECEC" />
+          <SolidColorBrush x:Key="PanelBrush" Color="#FFF6F6F6" />
+          <SolidColorBrush x:Key="GroupBrush" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="SurfaceEdgeBrush" Color="#1F000000" />
+          <SolidColorBrush x:Key="SeparatorBrush" Color="#14000000" />
+          <SolidColorBrush x:Key="FieldSurfaceBrush" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="PrimaryTextBrush" Color="#E6000000" />
+          <SolidColorBrush x:Key="SecondaryTextBrush" Color="#8C000000" />
+          <SolidColorBrush x:Key="TertiaryTextBrush" Color="#5C000000" />
+          <SolidColorBrush x:Key="HoverBrush" Color="#0D000000" />
+          <SolidColorBrush x:Key="SegmentTrackBrush" Color="#14000000" />
+          <SolidColorBrush x:Key="SegmentThumbBrush" Color="#FFFFFFFF" />
+          <SolidColorBrush x:Key="ErrorTextBrush" Color="#FFD70015" />
+          <SolidColorBrush x:Key="WarningTextBrush" Color="#FFB25000" />
+          <SolidColorBrush x:Key="AccentTextBrush" Color="{DynamicResource SystemAccentColorDark1}" />
+          <SolidColorBrush x:Key="SelectionBrush" Color="{DynamicResource SystemAccentColor}" Opacity="0.22" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="SurfaceBrush" Color="#FF1E1E1E" />
+          <SolidColorBrush x:Key="PanelBrush" Color="#FF262628" />
+          <SolidColorBrush x:Key="GroupBrush" Color="#FF2A2A2C" />
+          <SolidColorBrush x:Key="SurfaceEdgeBrush" Color="#1FFFFFFF" />
+          <SolidColorBrush x:Key="SeparatorBrush" Color="#17FFFFFF" />
+          <SolidColorBrush x:Key="FieldSurfaceBrush" Color="#FF333336" />
+          <SolidColorBrush x:Key="PrimaryTextBrush" Color="#EBFFFFFF" />
+          <SolidColorBrush x:Key="SecondaryTextBrush" Color="#99FFFFFF" />
+          <SolidColorBrush x:Key="TertiaryTextBrush" Color="#5CFFFFFF" />
+          <SolidColorBrush x:Key="HoverBrush" Color="#12FFFFFF" />
+          <SolidColorBrush x:Key="SegmentTrackBrush" Color="#1FFFFFFF" />
+          <SolidColorBrush x:Key="SegmentThumbBrush" Color="#FF5A5A5E" />
+          <SolidColorBrush x:Key="ErrorTextBrush" Color="#FFFF6961" />
+          <SolidColorBrush x:Key="WarningTextBrush" Color="#FFFFB340" />
+          <SolidColorBrush x:Key="AccentTextBrush" Color="{DynamicResource SystemAccentColorLight2}" />
+          <SolidColorBrush x:Key="SelectionBrush" Color="{DynamicResource SystemAccentColor}" Opacity="0.38" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+
+      <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource SystemAccentColor}" />
+      <FontFamily x:Key="MonospaceFont">SF Mono, Menlo, Monaco, monospace</FontFamily>
+    </ResourceDictionary>
   </Application.Resources>
 
   <Application.Styles>
     <FluentTheme />
 
-    <!-- The search field. Large, chromeless, and its own prompt: Avalonia's placeholder follows the
-         box's own text rather than the view model's debounced query, which is exactly the
-         behaviour the Windows head has to build a sibling text block to get. -->
+    <!-- The search field. Large, chromeless, and its own prompt. -->
     <Style Selector="TextBox.query">
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-      <Setter Property="CaretBrush" Value="{StaticResource PrimaryTextBrush}" />
-      <Setter Property="SelectionBrush" Value="{StaticResource SelectionBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="SelectionBrush" Value="{DynamicResource SelectionBrush}" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="FontSize" Value="22" />
       <Setter Property="Padding" Value="0" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style Selector="TextBox.query /template/ TextBlock#PART_Placeholder">
-      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TertiaryTextBrush}" />
     </Style>
     <Style Selector="TextBox.query:focus /template/ Border#PART_BorderElement">
       <Setter Property="Background" Value="Transparent" />
@@ -52,37 +89,30 @@
       <Setter Property="BorderThickness" Value="0" />
     </Style>
 
-    <!-- A result row. The selection is a rounded fill rather than the theme's accent bar, which is
-         the shape the Windows head draws and the one that reads as a list of cards. -->
+    <!-- A result row: a rounded fill in the system accent, the way Spotlight marks its selection. -->
     <Style Selector="ListBox.results > ListBoxItem">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Padding" Value="12,8" />
       <Setter Property="Margin" Value="0,1" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="CornerRadius" Value="7" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     </Style>
     <Style Selector="ListBox.results > ListBoxItem:selected /template/ ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource SelectionBrush}" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
+      <Setter Property="CornerRadius" Value="7" />
     </Style>
     <Style Selector="ListBox.results > ListBoxItem:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource HoverBrush}" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+      <Setter Property="CornerRadius" Value="7" />
     </Style>
     <Style Selector="ListBox.results > ListBoxItem:selected:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="{StaticResource SelectionBrush}" />
-      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
+      <Setter Property="CornerRadius" Value="7" />
     </Style>
 
     <!--
-      The overlay scroll bar, drawn the way Spotlight draws its own: no arrows and no track at rest,
-      only a thin rounded pill laid over the right edge of the rows. Under the pointer the pill
-      widens and brightens and a faint track appears behind it, which is what the macOS overlay
-      scroller does. The pill is always drawn rather than faded out when idle, because a launcher
-      is on screen for two seconds at a time and has to say there is more below the fold at once.
-
-      The halves of the track either side of the pill stay in the template as transparent buttons:
-      they are what turns a click on the track into a page up or a page down.
+      The overlay scroll bar, drawn the way macOS draws its own: no arrows and no track at rest, only
+      a thin rounded pill laid over the right edge, which widens under the pointer.
     -->
     <Style Selector="ListBox.results ScrollBar:vertical, ScrollViewer.overlay ScrollBar:vertical">
       <Setter Property="Width" Value="12" />
@@ -126,7 +156,7 @@
       <Setter Property="MinHeight" Value="28" />
       <Setter Property="HorizontalAlignment" Value="Center" />
       <Setter Property="CornerRadius" Value="3" />
-      <Setter Property="Background" Value="{StaticResource PrimaryTextBrush}" />
+      <Setter Property="Background" Value="{DynamicResource PrimaryTextBrush}" />
       <Setter Property="Opacity" Value="0.3" />
       <Setter Property="Template">
         <ControlTemplate>
@@ -141,7 +171,7 @@
       </Setter>
     </Style>
     <Style Selector="ScrollBar:pointerover /template/ Border#PillTrack">
-      <Setter Property="Background" Value="#14FFFFFF" />
+      <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
     </Style>
     <Style Selector="ScrollBar:pointerover /template/ Thumb#Pill">
       <Setter Property="Width" Value="8" />
@@ -152,51 +182,200 @@
       <Setter Property="Opacity" Value="0.7" />
     </Style>
 
-    <!-- Settings form typography. -->
-    <Style Selector="TextBlock.section">
-      <Setter Property="Foreground" Value="{StaticResource AccentTextBrush}" />
+    <!--
+      Grouped content, the way System Settings lays it out: a title above, a rounded container
+      lifted off the window background, and rows divided by hairlines that stop short of the left
+      edge. The recap's cards and the settings form are both built from these.
+    -->
+    <Style Selector="TextBlock.group-title">
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
       <Setter Property="FontSize" Value="13" />
-      <Setter Property="Margin" Value="0,22,0,2" />
+      <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
-    <Style Selector="TextBlock.label">
-      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-      <Setter Property="FontSize" Value="12" />
-      <Setter Property="Margin" Value="0,12,0,4" />
+    <Style Selector="Border.group">
+      <Setter Property="Background" Value="{DynamicResource GroupBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SurfaceEdgeBrush}" />
+      <Setter Property="BorderThickness" Value="0.5" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="ClipToBounds" Value="True" />
     </Style>
-    <Style Selector="TextBlock.hint">
-      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
-      <Setter Property="FontSize" Value="10" />
-      <Setter Property="Margin" Value="0,4,0,0" />
+    <Style Selector="Border.separator">
+      <Setter Property="Height" Value="1" />
+      <Setter Property="Background" Value="{DynamicResource SeparatorBrush}" />
+      <Setter Property="Margin" Value="14,0,0,0" />
+    </Style>
+    <Style Selector="TextBlock.caption">
+      <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+      <Setter Property="FontSize" Value="11" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
-
-    <Style Selector="TextBox.setting">
-      <Setter Property="Background" Value="{StaticResource FieldSurfaceBrush}" />
-      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
-      <Setter Property="CaretBrush" Value="{StaticResource PrimaryTextBrush}" />
-      <Setter Property="BorderBrush" Value="{StaticResource SurfaceEdgeBrush}" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="4" />
+    <Style Selector="TextBlock.section-caption">
+      <Setter Property="Foreground" Value="{DynamicResource TertiaryTextBrush}" />
+      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="LetterSpacing" Value="0.6" />
+    </Style>
+    <Style Selector="TextBlock.body">
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="TextBlock.secondary">
+      <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="TextBlock.tertiary">
+      <Setter Property="Foreground" Value="{DynamicResource TertiaryTextBrush}" />
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="Padding" Value="8,6" />
     </Style>
-    <Style Selector="TextBox.setting:focus /template/ Border#PART_BorderElement">
-      <Setter Property="BorderBrush" Value="{StaticResource AccentTextBrush}" />
-      <Setter Property="Background" Value="{StaticResource FieldSurfaceBrush}" />
+    <Style Selector="TextBlock.mono">
+      <Setter Property="FontFamily" Value="{StaticResource MonospaceFont}" />
+      <Setter Property="FontSize" Value="11.5" />
     </Style>
-    <Style Selector="TextBox.setting:pointerover /template/ Border#PART_BorderElement">
-      <Setter Property="Background" Value="{StaticResource FieldSurfaceBrush}" />
+
+    <!-- A row that is itself a button: flat, full width, highlighted only under the pointer. -->
+    <Style Selector="Button.row">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="14,9" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Focusable" Value="False" />
     </Style>
-    <!-- A read-only field is a label that can be copied, so it is drawn as one. -->
-    <Style Selector="TextBox.setting[IsReadOnly=True]">
-      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
+    <Style Selector="Button.row:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+    </Style>
+    <Style Selector="Button.row:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
+    </Style>
+
+    <!-- A small borderless icon button, for the steps and the row menus. -->
+    <Style Selector="Button.icon">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="6,2" />
+      <Setter Property="MinWidth" Value="26" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
+    <Style Selector="Button.icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="Button.icon:disabled">
+      <Setter Property="Opacity" Value="0.35" />
+    </Style>
+    <Style Selector="Button.icon:disabled /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
     </Style>
 
-    <Style Selector="CheckBox.setting">
-      <Setter Property="Foreground" Value="{StaticResource PrimaryTextBrush}" />
+    <!-- Push buttons at the size and corner radius macOS draws them. -->
+    <Style Selector="Button, SplitButton">
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Padding" Value="12,3" />
+      <Setter Property="MinHeight" Value="24" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!-- The default push button, filled with the system accent like every Mac dialog's. -->
+    <Style Selector="Button.accent, SplitButton.accent">
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.accent /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Opacity" Value="0.9" />
+    </Style>
+
+    <!-- A segmented control: a recessed track with the chosen segment raised out of it. -->
+    <Style Selector="Border.segmented">
+      <Setter Property="Background" Value="{DynamicResource SegmentTrackBrush}" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Padding" Value="2" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- A chevron drawn as a path, so it sits on the centre line rather than on a text baseline. -->
+    <Style Selector="Path.chevron">
+      <Setter Property="Width" Value="7" />
+      <Setter Property="Height" Value="12" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="StrokeThickness" Value="1.8" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="StrokeJoin" Value="Round" />
+      <Setter Property="Stroke" Value="{Binding $parent[Button].Foreground}" />
+    </Style>
+    <Style Selector="ToggleButton.segment">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="5" />
+      <Setter Property="Padding" Value="14,0" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="MinWidth" Value="56" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="Margin" Value="0,10,0,0" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
+    <Style Selector="ToggleButton.segment:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+    </Style>
+    <Style Selector="ToggleButton.segment:checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SegmentThumbBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="BoxShadow" Value="0 1 2 0 #26000000" />
+    </Style>
+
+    <!-- Settings fields: the system's rounded text field and a switch for every on/off value. -->
+    <Style Selector="TextBox.setting">
+      <Setter Property="Background" Value="{DynamicResource FieldSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource PrimaryTextBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SurfaceEdgeBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="MinHeight" Value="26" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox.setting:focus /template/ Border#PART_BorderElement">
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Background" Value="{DynamicResource FieldSurfaceBrush}" />
+    </Style>
+    <Style Selector="TextBox.setting:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{DynamicResource FieldSurfaceBrush}" />
+    </Style>
+    <!-- A read-only field is a label that can be copied, so it is drawn as one. -->
+    <Style Selector="TextBox.setting[IsReadOnly=True]">
+      <Setter Property="Foreground" Value="{DynamicResource SecondaryTextBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Right" />
+    </Style>
+    <Style Selector="TextBox.setting[IsReadOnly=True]:focus /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="ToggleSwitch.setting">
+      <Setter Property="OnContent" Value="" />
+      <Setter Property="OffContent" Value="" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="HorizontalAlignment" Value="Right" />
     </Style>
 
   </Application.Styles>

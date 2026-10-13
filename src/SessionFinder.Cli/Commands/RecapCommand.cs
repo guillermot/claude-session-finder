@@ -22,9 +22,11 @@ internal static class RecapCommand
     private const string NoGitFlag = "--no-git";
     private const string PromptsFlag = "--prompts";
     private const string SummarizeFlag = "--summarize";
+    private const string FormatFlag = "--format";
+    private const string WeekFlag = "--week";
     private const string DateFormat = "yyyy-MM-dd";
     private const string UsageText =
-        "Usage: finder recap [--date yyyy-MM-dd] [--days <n>] [--no-git] [--prompts] [--summarize]";
+        "Usage: finder recap [--date yyyy-MM-dd] [--days <n>] [--week] [--format markdown|slack|plain] [--no-git] [--prompts] [--summarize]";
 
     /// <summary>
     /// Runs the command.
@@ -47,7 +49,7 @@ internal static class RecapCommand
 
         var recap = await recapHandler.HandleAsync(options.Query, cancellationToken).ConfigureAwait(false);
 
-        Console.Write(RecapMarkdownFormatter.Format(recap, options.IncludePrompts));
+        Console.Write(RecapTextFormatter.Format(recap, options.Format, options.Scope, options.IncludePrompts));
 
         if (!options.Summarize)
         {
@@ -90,6 +92,12 @@ internal static class RecapCommand
                 case SummarizeFlag:
                     options = options with { Summarize = true };
                     break;
+                case WeekFlag:
+                    options = options with { Scope = RecapScope.Week };
+                    break;
+                case FormatFlag when TryReadValue(arguments, ref index, out var value) && TryParseFormat(value, out var format):
+                    options = options with { Format = format };
+                    break;
                 case DateFlag when TryReadValue(arguments, ref index, out var value)
                     && DateOnly.TryParseExact(value, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var day):
                     options = options with { Query = options.Query with { Day = day } };
@@ -105,6 +113,27 @@ internal static class RecapCommand
         }
 
         return true;
+    }
+
+    private static bool TryParseFormat(string value, out RecapTextFormat format)
+    {
+        switch (value.ToLowerInvariant())
+        {
+            case "markdown":
+            case "md":
+                format = RecapTextFormat.Markdown;
+                return true;
+            case "slack":
+                format = RecapTextFormat.Slack;
+                return true;
+            case "plain":
+            case "text":
+                format = RecapTextFormat.PlainText;
+                return true;
+            default:
+                format = default;
+                return false;
+        }
     }
 
     private static bool TryReadValue(IReadOnlyList<string> arguments, ref int index, out string value)
@@ -131,5 +160,9 @@ internal static class RecapCommand
         public bool IncludePrompts { get; init; }
 
         public bool Summarize { get; init; }
+
+        public RecapTextFormat Format { get; init; }
+
+        public RecapScope Scope { get; init; }
     }
 }

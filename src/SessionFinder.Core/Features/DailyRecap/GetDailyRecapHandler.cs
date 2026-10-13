@@ -270,6 +270,7 @@ public sealed class GetDailyRecapHandler(
         return new SessionRecap
         {
             SessionId = session.SessionId,
+            Folder = session.Folder,
             Title = session.Title.Text,
             Branch = ProjectDirectory.RealBranch(session.GitBranch),
             PromptCount = prompts.Count,

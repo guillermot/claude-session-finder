@@ -34,7 +34,7 @@
       Windows Forms type, and WPF reads its DPI awareness from the manifest before the first window
       exists; the runtime call the analyzer suggests happens far too late to affect it.
     -->
-    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <NoWarn>$(NoWarn);WFO0003;WPF0001</NoWarn>
   </PropertyGroup>
 
   <!--

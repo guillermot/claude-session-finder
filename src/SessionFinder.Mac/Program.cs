@@ -84,7 +84,6 @@ internal static class Program
         .Configure<App>()
         .UsePlatformDetect()
         .With(new MacOSPlatformOptions { ShowInDock = false })
-        .WithInterFont()
         .LogToTrace();
 
     /// <summary>

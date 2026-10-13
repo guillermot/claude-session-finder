@@ -38,6 +38,23 @@ public sealed class SummarizeRecapHandlerTests
     }
 
     [Fact]
+    public async Task HandleAsync_QuickQuestions_AreMentionedAsACountOnly()
+    {
+        _summarizer.SummarizeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Result<string>.Success("- did things"));
+        var recap = FridayRecap();
+        var project = recap.Focus!.Projects[0];
+        var quick = project.Sessions[0] with { Title = "What is None?", PromptCount = 1, KeyPrompts = ["what is None"] };
+        recap = recap with { Focus = recap.Focus with { Projects = [project with { Sessions = [.. project.Sessions, quick] }] } };
+
+        await Handler().HandleAsync(new SummarizeRecapCommand(recap), CancellationToken.None);
+
+        await _summarizer.Received(1).SummarizeAsync(
+            Arg.Is<string>(prompt => !prompt.Contains("What is None?") && prompt.Contains("Plus 1 quick question")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task HandleAsync_TheModelFails_PassesTheReasonOn()
     {
         var failure = AppError.SummaryFailed("not signed in");

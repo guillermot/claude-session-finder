@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using SessionFinder.Core.Abstractions;
 using SessionFinder.Core.Configuration;
 using SessionFinder.Core.Features.DailyRecap;
+using SessionFinder.Core.Features.SessionActions;
 using SessionFinder.Core.Results;
 using SessionFinder.Presentation.Abstractions;
 using SessionFinder.Presentation.Shell;
@@ -11,8 +12,8 @@ using SessionFinder.Presentation.Shell;
 namespace SessionFinder.Presentation.Recap;
 
 /// <summary>
-/// What the daily recap window shows: one day's recap as Markdown, the commands that step to the
-/// neighbouring active days, and the optional summary written by Claude.
+/// What the daily recap window shows: one card per project for a day or a week, the earlier days
+/// to jump to, the commands that step between active days, and the optional summary by Claude.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,6 +25,11 @@ namespace SessionFinder.Presentation.Recap;
 /// Everything that changes what the window shows is applied on the user interface thread. The
 /// handlers finish on the thread pool, and a property changed there is a change the window never
 /// sees, which is exactly how stepping between days once appeared to do nothing.
+/// </para>
+/// <para>
+/// The cards are built from the structured recap, and the text that is copied is rendered from the
+/// same recap in whichever format was last chosen, so what is on screen and what lands in a chat
+/// window describe exactly the same work.
 /// </para>
 /// <para>
 /// The summary command exists only while the setting is on. It is the one action in the
@@ -42,6 +48,14 @@ public sealed partial class RecapViewModel : ObservableObject
     private const string EmptyHeading = "Daily recap";
     private const string CopiedStatus = "Copied to the clipboard.";
     private const string SummarizingStatus = "Asking Claude for a summary…";
+    private const string ResumeAction = "resume session from recap";
+    private const string ResumeFailureTitle = "Could not resume the session";
+    private const string OpenFolderAction = "open folder from recap";
+    private const string OpenFolderFailureTitle = "Could not open the folder";
+    private const string RevealAction = "reveal folder from recap";
+    private const string RevealFailureTitle = "Could not show the folder";
+    private const string WeekDayFormat = "ddd d";
+    private const string TimeFormat = "HH:mm";
 
     private readonly IGetDailyRecapHandler _recapHandler;
     private readonly ISummarizeRecapHandler _summarizeHandler;
@@ -49,8 +63,33 @@ public sealed partial class RecapViewModel : ObservableObject
     private readonly IOptionsMonitor<RecapOptions> _options;
     private readonly AppCommandGuard _guard;
     private readonly IUiDispatcher _dispatcher;
+    private readonly IResumeSessionHandler _resume;
+    private readonly IOpenFolderInEditorHandler _openFolder;
+    private readonly IRevealInFileExplorerHandler _reveal;
 
     private DailyRecapResult? _recap;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCards))]
+    private IReadOnlyList<ProjectCardViewModel> _cards = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasEarlierDays))]
+    private IReadOnlyList<EarlierDayRowViewModel> _earlierDays = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDayView))]
+    private bool _isWeekView;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMarkdownFormat))]
+    [NotifyPropertyChangedFor(nameof(IsSlackFormat))]
+    [NotifyPropertyChangedFor(nameof(IsPlainTextFormat))]
+    [NotifyPropertyChangedFor(nameof(DisplayText))]
+    private RecapTextFormat _copyFormat = RecapTextFormat.Markdown;
+
+    [ObservableProperty]
+    private string? _emptyText;
 
     [ObservableProperty]
     private string _heading = EmptyHeading;
@@ -60,20 +99,14 @@ public sealed partial class RecapViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayText))]
-    [NotifyPropertyChangedFor(nameof(DisplayBody))]
-    private string _recapText = string.Empty;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(DisplayText))]
-    [NotifyPropertyChangedFor(nameof(DisplayBody))]
     [NotifyPropertyChangedFor(nameof(HasSummary))]
     [NotifyPropertyChangedFor(nameof(ToggleViewText))]
     private string? _summaryText;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayText))]
-    [NotifyPropertyChangedFor(nameof(DisplayBody))]
     [NotifyPropertyChangedFor(nameof(ToggleViewText))]
+    [NotifyPropertyChangedFor(nameof(IsShowingCards))]
     private bool _isShowingSummary;
 
     [ObservableProperty]
@@ -94,13 +127,19 @@ public sealed partial class RecapViewModel : ObservableObject
     /// <param name="options">Whether the summary command is offered.</param>
     /// <param name="guard">The seam every user-initiated action is reported through.</param>
     /// <param name="dispatcher">Brings finished work back to the user interface thread.</param>
+    /// <param name="resume">Resumes a session from its row.</param>
+    /// <param name="openFolder">Opens a session's folder in the editor.</param>
+    /// <param name="reveal">Shows a session's folder in the file manager.</param>
     public RecapViewModel(
         IGetDailyRecapHandler recapHandler,
         ISummarizeRecapHandler summarizeHandler,
         IClipboardService clipboard,
         IOptionsMonitor<RecapOptions> options,
         AppCommandGuard guard,
-        IUiDispatcher dispatcher)
+        IUiDispatcher dispatcher,
+        IResumeSessionHandler resume,
+        IOpenFolderInEditorHandler openFolder,
+        IRevealInFileExplorerHandler reveal)
     {
         ArgumentNullException.ThrowIfNull(recapHandler);
         ArgumentNullException.ThrowIfNull(summarizeHandler);
@@ -108,6 +147,9 @@ public sealed partial class RecapViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(guard);
         ArgumentNullException.ThrowIfNull(dispatcher);
+        ArgumentNullException.ThrowIfNull(resume);
+        ArgumentNullException.ThrowIfNull(openFolder);
+        ArgumentNullException.ThrowIfNull(reveal);
 
         _recapHandler = recapHandler;
         _summarizeHandler = summarizeHandler;
@@ -115,29 +157,41 @@ public sealed partial class RecapViewModel : ObservableObject
         _options = options;
         _guard = guard;
         _dispatcher = dispatcher;
+        _resume = resume;
+        _openFolder = openFolder;
+        _reveal = reveal;
     }
-
-    /// <summary>The text in the window: the summary when it is being shown, the recap otherwise.</summary>
-    public string DisplayText => IsShowingSummary && SummaryText is { } summary ? summary : RecapText;
 
     /// <summary>
-    /// What the window draws: the same text as <see cref="DisplayText"/>, minus the recap's opening
-    /// line naming the day, which the window's own heading already shows.
+    /// The text the copy command puts on the clipboard: the summary when it is being shown, and the
+    /// recap of the day or week in the chosen format otherwise.
     /// </summary>
-    public string DisplayBody
-    {
-        get
-        {
-            if (IsShowingSummary && SummaryText is { } summary)
-            {
-                return summary;
-            }
+    public string DisplayText => IsShowingSummary && SummaryText is { } summary
+        ? summary
+        : _recap is { } recap
+            ? RecapTextFormatter.Format(recap, CopyFormat, IsWeekView ? RecapScope.Week : RecapScope.Day)
+            : string.Empty;
 
-            var firstBreak = RecapText.IndexOf('\n', StringComparison.Ordinal);
+    /// <summary>Whether the day, rather than the week, is on screen.</summary>
+    public bool IsDayView => !IsWeekView;
 
-            return _recap?.Focus is not null && firstBreak >= 0 ? RecapText[(firstBreak + 1)..] : RecapText;
-        }
-    }
+    /// <summary>Whether the cards, rather than the summary, are on screen.</summary>
+    public bool IsShowingCards => !IsShowingSummary;
+
+    /// <summary>Whether there is at least one card.</summary>
+    public bool HasCards => Cards.Count > 0;
+
+    /// <summary>Whether the list of earlier days has anything in it.</summary>
+    public bool HasEarlierDays => EarlierDays.Count > 0;
+
+    /// <summary>Whether the copy format is Markdown, for the menu's check mark.</summary>
+    public bool IsMarkdownFormat => CopyFormat == RecapTextFormat.Markdown;
+
+    /// <summary>Whether the copy format is Slack, for the menu's check mark.</summary>
+    public bool IsSlackFormat => CopyFormat == RecapTextFormat.Slack;
+
+    /// <summary>Whether the copy format is plain text, for the menu's check mark.</summary>
+    public bool IsPlainTextFormat => CopyFormat == RecapTextFormat.PlainText;
 
     /// <summary>Whether a summary has been written for the day on screen.</summary>
     public bool HasSummary => SummaryText is not null;
@@ -184,6 +238,22 @@ public sealed partial class RecapViewModel : ObservableObject
 
         OnUiThread(() => Status = copied ? CopiedStatus : null);
     }
+
+    /// <summary>Copies in a format chosen from the menu, and remembers it for the next copy.</summary>
+    /// <param name="format">The format to copy in.</param>
+    /// <param name="cancellationToken">Abandons the attempt.</param>
+    /// <returns>The running copy.</returns>
+    [RelayCommand]
+    public Task CopyAsAsync(RecapTextFormat format, CancellationToken cancellationToken)
+    {
+        CopyFormat = format;
+
+        return CopyAsync(cancellationToken);
+    }
+
+    /// <summary>Switches between the day and the week rolled up by project.</summary>
+    [RelayCommand]
+    public void ToggleWeek() => IsWeekView = !IsWeekView;
 
     /// <summary>Has Claude write the day on screen up as stand-up bullets, and shows them.</summary>
     /// <param name="cancellationToken">Abandons the request.</param>
@@ -263,6 +333,15 @@ public sealed partial class RecapViewModel : ObservableObject
         }
     }
 
+    /// <summary>Rebuilds what is on screen when the day/week switch flips.</summary>
+    partial void OnIsWeekViewChanged(bool value)
+    {
+        if (_recap is { } recap)
+        {
+            Render(recap);
+        }
+    }
+
     private void OnUiThread(Action action)
     {
         if (_dispatcher.IsOnUiThread)
@@ -278,15 +357,102 @@ public sealed partial class RecapViewModel : ObservableObject
     {
         _recap = recap;
 
-        Heading = recap.Focus is { } focus ? RecapMarkdownFormatter.FormatDay(focus.Day) : EmptyHeading;
-        Subheading = DescribeFocus(recap);
-        RecapText = RecapMarkdownFormatter.Format(recap);
+        Render(recap);
         SummaryText = null;
         IsShowingSummary = false;
         Status = null;
         CanSummarize = _options.CurrentValue.EnableAiSummary;
 
         RefreshCommands();
+    }
+
+    /// <summary>
+    /// Builds the heading, the cards and the earlier days for the day or the week, from the recap
+    /// already in hand. Switching between the two never goes back to the index.
+    /// </summary>
+    private void Render(DailyRecapResult recap)
+    {
+        if (IsWeekView)
+        {
+            Heading = RecapTextFormatter.DescribeWeek(recap) ?? EmptyHeading;
+            Subheading = DescribeWeek(recap);
+            Cards = [.. RecapWeek.RollUp(recap).Select(BuildWeekCard)];
+            EarlierDays = [];
+        }
+        else
+        {
+            Heading = recap.Focus is { } focus ? RecapTextFormatter.FormatDay(focus.Day) : EmptyHeading;
+            Subheading = DescribeFocus(recap);
+            Cards = [.. (recap.Focus?.Projects ?? []).Select(BuildDayCard)];
+            EarlierDays = [.. recap.Earlier.Select(BuildEarlierDay)];
+        }
+
+        EmptyText = Cards.Count > 0
+            ? null
+            : recap.Focus is null ? "No Claude Code activity before today." : "No Claude Code activity on this day.";
+
+        OnPropertyChanged(nameof(DisplayText));
+    }
+
+    private ProjectCardViewModel BuildDayCard(ProjectRecap project) => new(
+        project.Name,
+        string.Join(", ", project.Branches),
+        RecapTextFormatter.FormatSpan(project.FirstActivity, project.LastActivity).Replace("–", " – ", StringComparison.Ordinal),
+        [.. project.Sessions.Where(session => !session.IsQuick).Select(session => BuildRow(session, dayLabel: null))],
+        [.. project.Sessions.Where(session => session.IsQuick).Select(session => BuildRow(session, dayLabel: null))],
+        [.. project.Commits.Select(commit => new CommitRowViewModel(commit.Sha, commit.Subject, commit.Timestamp.ToString(TimeFormat, System.Globalization.CultureInfo.InvariantCulture)))]);
+
+    private ProjectCardViewModel BuildWeekCard(WeekProjectRecap project) => new(
+        project.Name,
+        string.Join(", ", project.Branches),
+        RecapTextFormatter.Count(project.ActiveDays, "day"),
+        [.. project.Sessions.Where(entry => !entry.Session.IsQuick).Select(entry => BuildRow(entry.Session, WeekDay(entry.Day)))],
+        [.. project.Sessions.Where(entry => entry.Session.IsQuick).Select(entry => BuildRow(entry.Session, WeekDay(entry.Day)))],
+        [.. project.Commits.Select(entry => new CommitRowViewModel(entry.Commit.Sha, entry.Commit.Subject, WeekDay(entry.Day)))]);
+
+    private EarlierDayRowViewModel BuildEarlierDay(DayRecap day) => new(
+        day.Day,
+        string.Join(", ", day.Projects.Select(project => project.Name)),
+        day.Projects.Sum(project => project.Commits.Count),
+        (target, token) => LoadDayAsync(GetDailyRecapQuery.For(target), token));
+
+    private SessionRowViewModel BuildRow(SessionRecap session, string? dayLabel) => new(
+        session,
+        dayLabel,
+        (row, token) => _guard.RunAsync(
+            ResumeAction,
+            ResumeFailureTitle,
+            () => _resume.HandleAsync(new ResumeSessionCommand(row.SessionId, row.Folder), token)),
+        (row, token) => _guard.RunAsync(
+            OpenFolderAction,
+            OpenFolderFailureTitle,
+            () => _openFolder.HandleAsync(new OpenFolderInEditorCommand(row.Folder), token)),
+        (row, token) => _guard.RunAsync(
+            RevealAction,
+            RevealFailureTitle,
+            () => _reveal.HandleAsync(new RevealInFileExplorerCommand(row.Folder), token)));
+
+    private static string WeekDay(DateOnly day) => day.ToString(WeekDayFormat, System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string DescribeWeek(DailyRecapResult recap)
+    {
+        var days = RecapWeek.Days(recap);
+
+        if (days.Count == 0)
+        {
+            return "No activity";
+        }
+
+        var sessions = days.Sum(day => day.Projects.Sum(project => project.Sessions.Count));
+        var commits = days.Sum(day => day.Projects.Sum(project => project.Commits.Count));
+        var parts = new List<string> { Count(days.Count, "active day"), Count(sessions, "session") };
+
+        if (commits > 0)
+        {
+            parts.Add(Count(commits, "commit"));
+        }
+
+        return string.Join(" · ", parts);
     }
 
     /// <summary>
@@ -326,8 +492,7 @@ public sealed partial class RecapViewModel : ObservableObject
         return string.Join(" · ", parts);
     }
 
-    private static string Count(int count, string noun) =>
-        string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{count} {noun}{(count == 1 ? string.Empty : "s")}");
+    private static string Count(int count, string noun) => RecapTextFormatter.Count(count, noun);
 
     private void SetBusy(bool isBusy)
     {

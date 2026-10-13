@@ -16,11 +16,10 @@
         Background="Transparent"
         TransparencyLevelHint="Transparent"
         WindowStartupLocation="Manual"
-        UseLayoutRounding="True"
-        FontFamily="avares://Avalonia.Fonts.Inter/Assets#Inter">
+        UseLayoutRounding="True">
 
-  <Border Background="{StaticResource SurfaceBrush}"
-          BorderBrush="{StaticResource SurfaceEdgeBrush}"
+  <Border Background="{DynamicResource PanelBrush}"
+          BorderBrush="{DynamicResource SurfaceEdgeBrush}"
           BorderThickness="1"
           CornerRadius="10"
           Padding="6">
@@ -34,27 +33,27 @@
                  PlaceholderText="Search your sessions…"
                  Text="{Binding Query}" />
         <Button Grid.Column="1"
-                Content="Daily recap"
-                Focusable="False"
+                Classes="icon"
+                Content="Daily recap  ⌘R"
                 Margin="0,0,10,0"
                 Padding="10,4"
                 VerticalAlignment="Center"
                 FontSize="12"
-                Foreground="{StaticResource SecondaryTextBrush}"
+                Foreground="{DynamicResource AccentTextBrush}"
                 ToolTip.Tip="What you did on your last active day (⌘R)"
                 Command="{Binding ShowRecapCommand}" />
       </Grid>
 
       <Grid Grid.Row="1" Margin="14,0,14,6">
-        <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+        <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
                    FontSize="11"
                    Text="Most recent sessions"
                    IsVisible="{Binding IsShowingRecentSessions}" />
-        <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+        <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
                    FontSize="11"
                    Text="No session matches that."
                    IsVisible="{Binding IsEmpty}" />
-        <TextBlock Foreground="{StaticResource ErrorTextBrush}"
+        <TextBlock Foreground="{DynamicResource ErrorTextBrush}"
                    FontSize="11"
                    TextWrapping="Wrap"
                    Text="{Binding ErrorMessage}"
@@ -77,31 +76,31 @@
           <DataTemplate DataType="search:SessionResultViewModel">
             <StackPanel>
               <TextBlock Text="{Binding Title}"
-                         Foreground="{StaticResource PrimaryTextBrush}"
+                         Foreground="{DynamicResource PrimaryTextBrush}"
                          FontSize="14"
                          TextTrimming="CharacterEllipsis" />
               <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                 <TextBlock Text="{Binding LastActivity}"
-                           Foreground="{StaticResource AccentTextBrush}"
+                           Foreground="{DynamicResource AccentTextBrush}"
                            FontSize="11" />
-                <TextBlock Text="  ·  " Foreground="{StaticResource SecondaryTextBrush}" FontSize="11" />
+                <TextBlock Text="  ·  " Foreground="{DynamicResource SecondaryTextBrush}" FontSize="11" />
                 <TextBlock Text="{Binding Folder}"
-                           Foreground="{StaticResource SecondaryTextBrush}"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
                            FontSize="11"
                            TextTrimming="CharacterEllipsis" />
                 <TextBlock Text="  ·  "
-                           Foreground="{StaticResource SecondaryTextBrush}"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
                            FontSize="11"
                            IsVisible="{Binding Branch,
                                                Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <TextBlock Text="{Binding Branch}"
-                           Foreground="{StaticResource SecondaryTextBrush}"
+                           Foreground="{DynamicResource SecondaryTextBrush}"
                            FontSize="11"
                            IsVisible="{Binding Branch,
                                                Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </StackPanel>
               <TextBlock Text="{Binding Snippet}"
-                         Foreground="{StaticResource SecondaryTextBrush}"
+                         Foreground="{DynamicResource SecondaryTextBrush}"
                          FontSize="11"
                          Margin="0,3,0,0"
                          TextTrimming="CharacterEllipsis"
@@ -120,15 +119,15 @@
         never recorded, and it is what turns four greyed-out shortcuts into an explanation.
       -->
       <Border Grid.Row="3"
-              BorderBrush="{StaticResource SurfaceEdgeBrush}"
+              BorderBrush="{DynamicResource SurfaceEdgeBrush}"
               BorderThickness="0,1,0,0"
               Padding="14,6,14,4">
         <StackPanel DataContext="{Binding Actions}" x:DataType="actions:SessionActionsViewModel">
-          <TextBlock Foreground="{StaticResource SecondaryTextBrush}"
+          <TextBlock Foreground="{DynamicResource SecondaryTextBrush}"
                      FontSize="10"
                      TextWrapping="Wrap"
-                     Text="Enter open in VS Code  ·  ⌘Enter resume  ·  ⇧⌘Enter show in Finder  ·  ⌘C copy path  ·  ⇧⌘C copy id  ·  ⌥⌘C copy resume command  ·  ⌘R daily recap" />
-          <TextBlock Foreground="{StaticResource WarningTextBrush}"
+                     Text="Enter open in VS Code  ·  ⌘Enter resume  ·  ⇧⌘Enter show in Finder  ·  ⌘C copy path  ·  ⇧⌘C copy id  ·  ⌥⌘C copy resume command" />
+          <TextBlock Foreground="{DynamicResource WarningTextBrush}"
                      FontSize="10"
                      Margin="0,3,0,0"
                      TextWrapping="Wrap"

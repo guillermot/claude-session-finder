@@ -2,121 +2,263 @@
         x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:recap="clr-namespace:SessionFinder.Presentation.Recap;assembly=SessionFinder.Presentation"
+        xmlns:daily="clr-namespace:SessionFinder.Core.Features.DailyRecap;assembly=SessionFinder.Core"
         Title="Daily recap"
-        Width="680"
-        Height="640"
-        MinWidth="480"
-        MinHeight="380"
+        Width="720"
+        Height="720"
+        MinWidth="520"
+        MinHeight="420"
         ResizeMode="CanResize"
         ShowInTaskbar="True"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource SurfaceBrush}"
-        UseLayoutRounding="True"
-        TextOptions.TextFormattingMode="Display">
+        Background="{DynamicResource SurfaceBrush}"
+        UseLayoutRounding="True">
 
+  <!--
+    Windows 11's settings-card layout: a header with the day and its controls, then one card per
+    project with rows divided by hairlines, then the earlier days as a card of rows that open them.
+    The controls themselves are the Fluent theme's; only the cards' colours come from the palette.
+  -->
   <Window.Resources>
-    <Style x:Key="StepButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
-      <Setter Property="Width" Value="34" />
-      <Setter Property="Height" Value="34" />
-      <Setter Property="MinWidth" Value="34" />
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="Margin" Value="8,0,0,0" />
-      <Setter Property="FontSize" Value="18" />
+    <Style x:Key="SegmentStyle" TargetType="ToggleButton" BasedOn="{StaticResource {x:Type ToggleButton}}">
+      <Setter Property="MinWidth" Value="64" />
       <Setter Property="Focusable" Value="False" />
     </Style>
-    <Style x:Key="FooterHintStyle" TargetType="TextBlock">
-      <Setter Property="Foreground" Value="{StaticResource SecondaryTextBrush}" />
-      <Setter Property="FontSize" Value="11" />
-      <Setter Property="VerticalAlignment" Value="Center" />
-      <Setter Property="Text" Value="← → change day  ·  Enter copy  ·  Esc close" />
-      <Setter Property="Visibility" Value="Collapsed" />
-      <Style.Triggers>
-        <DataTrigger Binding="{Binding Status, TargetNullValue=''}" Value="">
-          <Setter Property="Visibility" Value="Visible" />
+
+    <DataTemplate x:Key="SessionRowTemplate" DataType="{x:Type recap:SessionRowViewModel}">
+      <StackPanel>
+        <Border x:Name="Lead" Style="{StaticResource SeparatorStyle}" Margin="16,0,0,0" />
+        <Grid Margin="16,8,8,8">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Column="0" Style="{StaticResource TertiaryTextStyle}" Text="{Binding DayLabel}" Width="52"
+                     Visibility="{Binding HasDayLabel, Converter={StaticResource BooleanToVisibility}}" />
+          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <TextBlock Style="{StaticResource BodyTextStyle}" Text="{Binding Title}" />
+            <TextBlock Style="{StaticResource CaptionTextStyle}" Text="{Binding Description}" Margin="0,2,0,0"
+                       MaxHeight="34" TextTrimming="CharacterEllipsis"
+                       Visibility="{Binding HasDescription, Converter={StaticResource BooleanToVisibility}}" />
+          </StackPanel>
+          <TextBlock Grid.Column="2" Style="{StaticResource TertiaryTextStyle}" Text="{Binding PromptCountText}"
+                     Margin="12,0,6,0" ToolTip="Prompts" />
+          <Button Grid.Column="3" Content="⋯" ToolTip="Session actions" Style="{StaticResource IconButtonStyle}"
+                  IsEnabled="{Binding CanActOnFolder}" Click="OnMenuButtonClick">
+            <Button.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Resume in terminal" Command="{Binding ResumeCommand}" />
+                <MenuItem Header="Open folder in editor" Command="{Binding OpenFolderCommand}" />
+                <MenuItem Header="Show in Explorer" Command="{Binding RevealCommand}" />
+              </ContextMenu>
+            </Button.ContextMenu>
+          </Button>
+        </Grid>
+      </StackPanel>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}" Value="0">
+          <Setter TargetName="Lead" Property="Visibility" Value="Collapsed" />
         </DataTrigger>
-      </Style.Triggers>
-    </Style>
+      </DataTemplate.Triggers>
+    </DataTemplate>
   </Window.Resources>
 
-  <Grid Margin="22,18,22,16">
+  <Grid>
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <Grid Grid.Row="0" Margin="2,0,0,14">
+    <Grid Grid.Row="0" Margin="24,16,16,12">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
       <StackPanel Grid.Column="0" VerticalAlignment="Center">
-        <TextBlock Text="{Binding Heading}"
-                   Foreground="{StaticResource PrimaryTextBrush}"
-                   FontSize="22"
-                   FontWeight="SemiBold" />
-        <TextBlock Text="{Binding Subheading}"
-                   Foreground="{StaticResource SecondaryTextBrush}"
-                   FontSize="12"
-                   Margin="0,3,0,0" />
+        <TextBlock Text="{Binding Heading}" Foreground="{DynamicResource PrimaryTextBrush}" FontSize="24" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Subheading}" Style="{StaticResource CaptionTextStyle}" Margin="0,2,0,0" />
       </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-        <Button Content="‹" ToolTip="Previous active day (←)"
-                Style="{StaticResource StepButtonStyle}"
+      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+        <ToggleButton Content="Day" Style="{StaticResource SegmentStyle}"
+                      IsChecked="{Binding IsDayView, Mode=OneWay}" Command="{Binding ToggleWeekCommand}"
+                      IsHitTestVisible="{Binding IsWeekView}" />
+        <ToggleButton Content="Week" Style="{StaticResource SegmentStyle}" Margin="4,0,0,0"
+                      IsChecked="{Binding IsWeekView, Mode=OneWay}" Command="{Binding ToggleWeekCommand}"
+                      IsHitTestVisible="{Binding IsDayView}" />
+      </StackPanel>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+        <Button Content="‹" FontSize="20" ToolTip="Previous active day (←)" Style="{StaticResource IconButtonStyle}"
                 Command="{Binding PreviousDayCommand}" />
-        <Button Content="›" ToolTip="Next active day (→)"
-                Style="{StaticResource StepButtonStyle}"
+        <Button Content="›" FontSize="20" ToolTip="Next active day (→)" Style="{StaticResource IconButtonStyle}"
                 Command="{Binding NextDayCommand}" />
       </StackPanel>
     </Grid>
 
-    <Border Grid.Row="1"
-            Background="{StaticResource FieldSurfaceBrush}"
-            BorderBrush="{StaticResource SurfaceEdgeBrush}"
-            BorderThickness="1"
-            CornerRadius="10">
-      <ScrollViewer Style="{StaticResource OverlayScrollViewerStyle}"
-                    VerticalScrollBarVisibility="Auto"
-                    HorizontalScrollBarVisibility="Disabled"
-                    Padding="22,16,22,20">
-        <StackPanel x:Name="Document" />
-      </ScrollViewer>
-    </Border>
+    <ScrollViewer Grid.Row="1" Style="{StaticResource OverlayScrollViewerStyle}"
+                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="24,4,24,24">
 
-    <Grid Grid.Row="2" Margin="2,14,0,0">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="Auto" />
-      </Grid.ColumnDefinitions>
-      <TextBlock Grid.Column="0"
-                 Text="{Binding Status}"
-                 Foreground="{StaticResource AccentTextBrush}"
-                 FontSize="11"
-                 VerticalAlignment="Center"
-                 TextWrapping="Wrap"
-                 Visibility="{Binding Status, Converter={StaticResource NullToCollapsed}}" />
-      <TextBlock Grid.Column="0" Style="{StaticResource FooterHintStyle}" />
-      <StackPanel Grid.Column="1" Orientation="Horizontal">
-        <Button Content="{Binding ToggleViewText}"
-                Focusable="False"
-                Style="{StaticResource SecondaryButtonStyle}"
-                Visibility="{Binding HasSummary, Converter={StaticResource BooleanToVisibility}}"
-                Command="{Binding ToggleViewCommand}" />
-        <Button Content="✦ Summarize with Claude"
-                Focusable="False"
-                Style="{StaticResource SecondaryButtonStyle}"
-                Visibility="{Binding CanSummarize, Converter={StaticResource BooleanToVisibility}}"
-                Command="{Binding SummarizeCommand}" />
-        <Button Content="Close"
-                Focusable="False"
-                Style="{StaticResource SecondaryButtonStyle}"
-                Click="OnCloseClicked" />
-        <Button Content="Copy"
-                Focusable="False"
-                Style="{StaticResource PrimaryButtonStyle}"
-                Command="{Binding CopyCommand}" />
+        <TextBlock Text="{Binding EmptyText}" Style="{StaticResource SecondaryTextStyle}" HorizontalAlignment="Center"
+                   Margin="0,40,0,0" Visibility="{Binding EmptyText, Converter={StaticResource NullToCollapsed}}" />
+
+        <ItemsControl ItemsSource="{Binding Cards}" Focusable="False"
+                      Visibility="{Binding IsShowingCards, Converter={StaticResource BooleanToVisibility}}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type recap:ProjectCardViewModel}">
+              <StackPanel Margin="0,0,0,18">
+                <Grid Margin="2,0,2,8">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Style="{StaticResource GroupTitleStyle}" Text="{Binding Name}" VerticalAlignment="Bottom" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource TertiaryTextStyle}" Text="{Binding Branches}"
+                             FontFamily="{StaticResource MonospaceFont}" Margin="8,0,0,1" VerticalAlignment="Bottom"
+                             Visibility="{Binding HasBranches, Converter={StaticResource BooleanToVisibility}}" />
+                  <TextBlock Grid.Column="2" Style="{StaticResource TertiaryTextStyle}" Text="{Binding Span}" VerticalAlignment="Bottom" />
+                </Grid>
+
+                <Border Style="{StaticResource GroupStyle}">
+                  <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Sessions}" AlternationCount="10000" Focusable="False"
+                                  ItemTemplate="{StaticResource SessionRowTemplate}" />
+
+                    <StackPanel Visibility="{Binding HasQuickSessions, Converter={StaticResource BooleanToVisibility}}">
+                      <Border Style="{StaticResource SeparatorStyle}" Margin="16,0,0,0"
+                              Visibility="{Binding HasSessions, Converter={StaticResource BooleanToVisibility}}" />
+                      <Button Style="{StaticResource RowButtonStyle}" Command="{Binding ToggleQuickCommand}">
+                        <DockPanel>
+                          <TextBlock DockPanel.Dock="Right" Style="{StaticResource TertiaryTextStyle}" Text="⌄" />
+                          <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{Binding QuickToggleText}" />
+                        </DockPanel>
+                      </Button>
+                      <ItemsControl ItemsSource="{Binding QuickSessions}" Focusable="False"
+                                    ItemTemplate="{StaticResource SessionRowTemplate}"
+                                    Visibility="{Binding IsQuickExpanded, Converter={StaticResource BooleanToVisibility}}" />
+                    </StackPanel>
+
+                    <StackPanel Visibility="{Binding HasCommits, Converter={StaticResource BooleanToVisibility}}">
+                      <Border Style="{StaticResource SeparatorStyle}" Margin="16,0,0,0" />
+                      <Button Style="{StaticResource RowButtonStyle}" Command="{Binding ToggleCommitsCommand}">
+                        <DockPanel>
+                          <TextBlock DockPanel.Dock="Right" Style="{StaticResource TertiaryTextStyle}" Text="⌄" />
+                          <TextBlock Style="{StaticResource SecondaryTextStyle}" Text="{Binding CommitsToggleText}" />
+                        </DockPanel>
+                      </Button>
+                      <ItemsControl ItemsSource="{Binding Commits}" Focusable="False" Margin="0,0,0,8"
+                                    Visibility="{Binding IsCommitsExpanded, Converter={StaticResource BooleanToVisibility}}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate DataType="{x:Type recap:CommitRowViewModel}">
+                            <Grid Margin="16,4,16,4">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="0" Style="{StaticResource TertiaryTextStyle}" Text="{Binding Sha}"
+                                         FontFamily="{StaticResource MonospaceFont}" Margin="0,0,10,0" />
+                              <TextBlock Grid.Column="1" Style="{StaticResource BodyTextStyle}" Text="{Binding Subject}" />
+                              <TextBlock Grid.Column="2" Style="{StaticResource TertiaryTextStyle}" Text="{Binding When}" Margin="12,0,0,0" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Visibility="{Binding HasEarlierDays, Converter={StaticResource BooleanToVisibility}}">
+          <TextBlock Style="{StaticResource GroupTitleStyle}" Text="Earlier" Margin="2,0,2,8" />
+          <Border Style="{StaticResource GroupStyle}">
+            <ItemsControl ItemsSource="{Binding EarlierDays}" AlternationCount="10000" Focusable="False">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type recap:EarlierDayRowViewModel}">
+                  <StackPanel>
+                    <Border x:Name="Lead" Style="{StaticResource SeparatorStyle}" Margin="16,0,0,0" />
+                    <Button Style="{StaticResource RowButtonStyle}" Command="{Binding OpenCommand}">
+                      <Grid>
+                        <Grid.ColumnDefinitions>
+                          <ColumnDefinition Width="104" />
+                          <ColumnDefinition Width="*" />
+                          <ColumnDefinition Width="Auto" />
+                          <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" Text="{Binding DayLabel}" />
+                        <TextBlock Grid.Column="1" Style="{StaticResource SecondaryTextStyle}" Text="{Binding Projects}" />
+                        <TextBlock Grid.Column="2" Style="{StaticResource TertiaryTextStyle}" Text="{Binding CommitsText}" Margin="12,0,10,0" />
+                        <TextBlock Grid.Column="3" Style="{StaticResource TertiaryTextStyle}" Text="›" FontSize="16" />
+                      </Grid>
+                    </Button>
+                  </StackPanel>
+                  <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding (ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}" Value="0">
+                      <Setter TargetName="Lead" Property="Visibility" Value="Collapsed" />
+                    </DataTrigger>
+                  </DataTemplate.Triggers>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+        </StackPanel>
+
+        <StackPanel Visibility="{Binding IsShowingSummary, Converter={StaticResource BooleanToVisibility}}">
+          <TextBlock Style="{StaticResource GroupTitleStyle}" Text="Stand-up summary" Margin="2,0,2,8" />
+          <Border Style="{StaticResource GroupStyle}" Padding="18,14">
+            <StackPanel x:Name="SummaryDocument" />
+          </Border>
+          <TextBlock Style="{StaticResource CaptionTextStyle}" Margin="2,8,2,0"
+                     Text="Written by Claude from this recap. Review it before you share it." />
+        </StackPanel>
+
       </StackPanel>
-    </Grid>
+    </ScrollViewer>
+
+    <Border Grid.Row="2" BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,1,0,0" Padding="24,12,16,14">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Column="0" Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center"
+                   Text="{Binding Status}" Foreground="{DynamicResource AccentTextBrush}"
+                   Visibility="{Binding Status, Converter={StaticResource NullToCollapsed}}" />
+        <TextBlock Grid.Column="0" x:Name="KeyHint" Style="{StaticResource CaptionTextStyle}" VerticalAlignment="Center"
+                   Text="← → day  ·  W week  ·  Enter copy" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal">
+          <Button Content="{Binding ToggleViewText}" Style="{StaticResource SecondaryButtonStyle}" Focusable="False"
+                  Visibility="{Binding HasSummary, Converter={StaticResource BooleanToVisibility}}"
+                  Command="{Binding ToggleViewCommand}" />
+          <Button Content="Summarize with Claude" Style="{StaticResource SecondaryButtonStyle}" Focusable="False"
+                  Visibility="{Binding CanSummarize, Converter={StaticResource BooleanToVisibility}}"
+                  Command="{Binding SummarizeCommand}" />
+          <Button Content="Close" Style="{StaticResource SecondaryButtonStyle}" Focusable="False" Click="OnCloseClicked" />
+          <Button Content="Copy" Style="{StaticResource PrimaryButtonStyle}" Focusable="False" Command="{Binding CopyCommand}" />
+          <Button Content="⌄" ToolTip="Copy format" Style="{StaticResource PrimaryButtonStyle}" MinWidth="32" Margin="2,0,0,0"
+                  Focusable="False" Click="OnMenuButtonClick">
+            <Button.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="Copy as Markdown" IsCheckable="False" IsChecked="{Binding IsMarkdownFormat, Mode=OneWay}"
+                          Command="{Binding CopyAsCommand}" CommandParameter="{x:Static daily:RecapTextFormat.Markdown}" />
+                <MenuItem Header="Copy for Slack" IsCheckable="False" IsChecked="{Binding IsSlackFormat, Mode=OneWay}"
+                          Command="{Binding CopyAsCommand}" CommandParameter="{x:Static daily:RecapTextFormat.Slack}" />
+                <MenuItem Header="Copy as plain text" IsCheckable="False" IsChecked="{Binding IsPlainTextFormat, Mode=OneWay}"
+                          Command="{Binding CopyAsCommand}" CommandParameter="{x:Static daily:RecapTextFormat.PlainText}" />
+              </ContextMenu>
+            </Button.ContextMenu>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
 
   </Grid>
 </Window>
