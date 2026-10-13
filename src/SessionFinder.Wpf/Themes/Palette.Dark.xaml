@@ -1,0 +1,17 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Windows 11 dark appearance: the values follow the Fluent design tokens for app content. -->
+  <SolidColorBrush x:Key="SurfaceBrush" Color="#FF202020" />
+  <SolidColorBrush x:Key="PanelBrush" Color="#FF2C2C2C" />
+  <SolidColorBrush x:Key="GroupBrush" Color="#FF2B2B2B" />
+  <SolidColorBrush x:Key="SurfaceEdgeBrush" Color="#1FFFFFFF" />
+  <SolidColorBrush x:Key="SeparatorBrush" Color="#15FFFFFF" />
+  <SolidColorBrush x:Key="FieldSurfaceBrush" Color="#FF2D2D2D" />
+  <SolidColorBrush x:Key="PrimaryTextBrush" Color="#FFFFFFFF" />
+  <SolidColorBrush x:Key="SecondaryTextBrush" Color="#C5FFFFFF" />
+  <SolidColorBrush x:Key="TertiaryTextBrush" Color="#87FFFFFF" />
+  <SolidColorBrush x:Key="HoverBrush" Color="#0FFFFFFF" />
+  <SolidColorBrush x:Key="SelectionBrush" Color="#3360CDFF" />
+  <SolidColorBrush x:Key="ErrorTextBrush" Color="#FFFF99A4" />
+  <SolidColorBrush x:Key="WarningTextBrush" Color="#FFFCE100" />
+</ResourceDictionary>

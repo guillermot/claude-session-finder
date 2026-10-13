@@ -1,0 +1,306 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:recap="clr-namespace:SessionFinder.Presentation.Recap;assembly=SessionFinder.Presentation"
+        xmlns:daily="clr-namespace:SessionFinder.Core.Features.DailyRecap;assembly=SessionFinder.Core"
+        x:Class="SessionFinder.Mac.Views.RecapWindow"
+        x:ClassModifier="internal"
+        x:DataType="recap:RecapViewModel"
+        Title="Daily recap"
+        Width="720"
+        Height="720"
+        MinWidth="520"
+        MinHeight="420"
+        CanResize="True"
+        ShowInTaskbar="True"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="56"
+        Background="{DynamicResource SurfaceBrush}"
+        UseLayoutRounding="True">
+
+  <!--
+    A unified title bar, as in Notes or System Settings: the day, the Day/Week switch and the step
+    buttons sit in the bar itself beside the traffic lights, and the content scrolls underneath. The
+    left inset leaves room for the traffic lights, which macOS keeps drawing.
+  -->
+  <Window.Styles>
+    <!-- Rows are divided by a hairline above each one, except the first in its group. -->
+    <Style Selector="ContentPresenter:nth-child(1) > StackPanel > Border.leading">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="56,*,Auto">
+
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="84,0,14,0">
+      <StackPanel Grid.Column="0" VerticalAlignment="Center" IsHitTestVisible="False">
+        <TextBlock Text="{Binding Heading}"
+                   Foreground="{DynamicResource PrimaryTextBrush}"
+                   FontSize="15"
+                   FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Subheading}" Classes="caption" Margin="0,1,0,0" />
+      </StackPanel>
+
+      <Border Grid.Column="1" Classes="segmented" VerticalAlignment="Center" Margin="0,0,10,0">
+        <StackPanel Orientation="Horizontal">
+          <ToggleButton Classes="segment" Content="Day"
+                        IsChecked="{Binding IsDayView, Mode=OneWay}"
+                        Command="{Binding ToggleWeekCommand}"
+                        IsHitTestVisible="{Binding IsWeekView}" />
+          <ToggleButton Classes="segment" Content="Week"
+                        IsChecked="{Binding IsWeekView, Mode=OneWay}"
+                        Command="{Binding ToggleWeekCommand}"
+                        IsHitTestVisible="{Binding IsDayView}" />
+        </StackPanel>
+      </Border>
+
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+        <Button Classes="icon" Width="28" Height="28" Padding="0"
+                ToolTip.Tip="Previous active day (←)"
+                Command="{Binding PreviousDayCommand}">
+          <Path Classes="chevron" Data="M 6,0 L 0,6 L 6,12" />
+        </Button>
+        <Button Classes="icon" Width="28" Height="28" Padding="0"
+                ToolTip.Tip="Next active day (→)"
+                Command="{Binding NextDayCommand}">
+          <Path Classes="chevron" Data="M 0,0 L 6,6 L 0,12" />
+        </Button>
+      </StackPanel>
+    </Grid>
+
+    <Border Grid.Row="0" VerticalAlignment="Bottom" Height="1" Background="{DynamicResource SeparatorBrush}" />
+
+    <ScrollViewer Grid.Row="1"
+                  Classes="overlay"
+                  AllowAutoHide="True"
+                  VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="22,18,22,24" Spacing="18">
+
+        <TextBlock Text="{Binding EmptyText}"
+                   Classes="secondary"
+                   HorizontalAlignment="Center"
+                   Margin="0,40,0,0"
+                   IsVisible="{Binding EmptyText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <!-- One titled card per project. -->
+        <ItemsControl ItemsSource="{Binding Cards}" IsVisible="{Binding IsShowingCards}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Spacing="18" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="recap:ProjectCardViewModel">
+              <StackPanel Spacing="7">
+                <Grid ColumnDefinitions="Auto,*,Auto" Margin="4,0,4,0">
+                  <TextBlock Grid.Column="0" Classes="group-title" Text="{Binding Name}" VerticalAlignment="Bottom" />
+                  <TextBlock Grid.Column="1" Classes="tertiary mono" Text="{Binding Branches}"
+                             Margin="8,0,0,1" VerticalAlignment="Bottom" TextTrimming="CharacterEllipsis"
+                             IsVisible="{Binding HasBranches}" />
+                  <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding Span}" VerticalAlignment="Bottom" />
+                </Grid>
+
+                <Border Classes="group">
+                  <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Sessions}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="recap:SessionRowViewModel">
+                          <StackPanel>
+                            <Border Classes="separator leading" />
+                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="14,8,8,8">
+                              <TextBlock Grid.Column="0" Classes="tertiary" Text="{Binding DayLabel}"
+                                         Width="48" VerticalAlignment="Center" IsVisible="{Binding HasDayLabel}" />
+                              <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Classes="body" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Classes="caption" Text="{Binding Description}" Margin="0,2,0,0"
+                                           MaxLines="2" TextTrimming="CharacterEllipsis"
+                                           IsVisible="{Binding HasDescription}" />
+                              </StackPanel>
+                              <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding PromptCountText}"
+                                         VerticalAlignment="Center" Margin="12,0,6,0"
+                                         ToolTip.Tip="Prompts" />
+                              <Button Grid.Column="3" Classes="icon" Content="⋯" ToolTip.Tip="Session actions"
+                                      IsEnabled="{Binding CanActOnFolder}">
+                                <Button.Flyout>
+                                  <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                    <MenuItem Header="Resume in Terminal" Command="{Binding ResumeCommand}" />
+                                    <MenuItem Header="Open Folder in Editor" Command="{Binding OpenFolderCommand}" />
+                                    <MenuItem Header="Reveal in Finder" Command="{Binding RevealCommand}" />
+                                  </MenuFlyout>
+                                </Button.Flyout>
+                              </Button>
+                            </Grid>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <StackPanel IsVisible="{Binding HasQuickSessions}">
+                      <Border Classes="separator" IsVisible="{Binding HasSessions}" />
+                      <Button Classes="row" Command="{Binding ToggleQuickCommand}">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Classes="secondary" Text="{Binding QuickToggleText}" />
+                          <TextBlock Grid.Column="1" Classes="tertiary" Text="⌄" IsVisible="{Binding !IsQuickExpanded}" />
+                          <TextBlock Grid.Column="1" Classes="tertiary" Text="⌃" IsVisible="{Binding IsQuickExpanded}" />
+                        </Grid>
+                      </Button>
+                      <ItemsControl ItemsSource="{Binding QuickSessions}" IsVisible="{Binding IsQuickExpanded}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="recap:SessionRowViewModel">
+                            <StackPanel>
+                              <Border Classes="separator" />
+                              <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="14,7,8,7">
+                                <TextBlock Grid.Column="0" Classes="tertiary" Text="{Binding DayLabel}"
+                                           Width="48" VerticalAlignment="Center" IsVisible="{Binding HasDayLabel}" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                  <TextBlock Classes="secondary" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                  <TextBlock Classes="caption" Text="{Binding Description}" Margin="0,2,0,0"
+                                             MaxLines="1" TextTrimming="CharacterEllipsis"
+                                             IsVisible="{Binding HasDescription}" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding PromptCountText}"
+                                           VerticalAlignment="Center" Margin="12,0,6,0" />
+                                <Button Grid.Column="3" Classes="icon" Content="⋯" ToolTip.Tip="Session actions"
+                                        IsEnabled="{Binding CanActOnFolder}">
+                                  <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                      <MenuItem Header="Resume in Terminal" Command="{Binding ResumeCommand}" />
+                                      <MenuItem Header="Open Folder in Editor" Command="{Binding OpenFolderCommand}" />
+                                      <MenuItem Header="Reveal in Finder" Command="{Binding RevealCommand}" />
+                                    </MenuFlyout>
+                                  </Button.Flyout>
+                                </Button>
+                              </Grid>
+                            </StackPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+
+                    <StackPanel IsVisible="{Binding HasCommits}">
+                      <Border Classes="separator" />
+                      <Button Classes="row" Command="{Binding ToggleCommitsCommand}">
+                        <Grid ColumnDefinitions="*,Auto">
+                          <TextBlock Grid.Column="0" Classes="secondary" Text="{Binding CommitsToggleText}" />
+                          <TextBlock Grid.Column="1" Classes="tertiary" Text="⌄" IsVisible="{Binding !IsCommitsExpanded}" />
+                          <TextBlock Grid.Column="1" Classes="tertiary" Text="⌃" IsVisible="{Binding IsCommitsExpanded}" />
+                        </Grid>
+                      </Button>
+                      <ItemsControl ItemsSource="{Binding Commits}" Margin="0,0,0,8" IsVisible="{Binding IsCommitsExpanded}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="recap:CommitRowViewModel">
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="14,4,14,4">
+                              <TextBlock Grid.Column="0" Classes="tertiary mono" Text="{Binding Sha}"
+                                         VerticalAlignment="Center" Margin="0,0,10,0" />
+                              <TextBlock Grid.Column="1" Classes="body" Text="{Binding Subject}"
+                                         VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                              <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding When}"
+                                         VerticalAlignment="Center" Margin="12,0,0,0" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- The earlier days, each a row that opens its day. -->
+        <StackPanel Spacing="7" IsVisible="{Binding HasEarlierDays}">
+          <TextBlock Classes="group-title" Text="Earlier" Margin="4,0,4,0" />
+          <Border Classes="group">
+            <ItemsControl ItemsSource="{Binding EarlierDays}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="recap:EarlierDayRowViewModel">
+                  <StackPanel>
+                    <Border Classes="separator leading" />
+                    <Button Classes="row" Command="{Binding OpenCommand}">
+                      <Grid ColumnDefinitions="96,*,Auto,Auto">
+                        <TextBlock Grid.Column="0" Classes="body" FontWeight="Medium" Text="{Binding DayLabel}"
+                                   VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Classes="secondary" Text="{Binding Projects}"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding CommitsText}"
+                                   VerticalAlignment="Center" Margin="12,0,10,0" />
+                        <TextBlock Grid.Column="3" Classes="tertiary" Text="›" FontSize="15"
+                                   VerticalAlignment="Center" />
+                      </Grid>
+                    </Button>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+        </StackPanel>
+
+        <!-- The summary, when one has been written, in a card of its own. -->
+        <StackPanel Spacing="7" IsVisible="{Binding IsShowingSummary}">
+          <TextBlock Classes="group-title" Text="Stand-up summary" Margin="4,0,4,0" />
+          <Border Classes="group" Padding="16,12,16,14">
+            <StackPanel Name="SummaryDocument" />
+          </Border>
+          <TextBlock Classes="caption" Margin="4,0,4,0"
+                     Text="Written by Claude from this recap. Review it before you share it." />
+        </StackPanel>
+
+      </StackPanel>
+    </ScrollViewer>
+
+    <Border Grid.Row="2" BorderBrush="{DynamicResource SeparatorBrush}" BorderThickness="0,1,0,0" Padding="18,10,14,12">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Grid.Column="0" Classes="caption" VerticalAlignment="Center"
+                   Text="{Binding Status}" Foreground="{DynamicResource AccentTextBrush}"
+                   IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <TextBlock Grid.Column="0" Classes="caption" VerticalAlignment="Center"
+                   Text="← → day  ·  W week  ·  ⏎ copy"
+                   IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Content="{Binding ToggleViewText}"
+                  IsVisible="{Binding HasSummary}"
+                  Command="{Binding ToggleViewCommand}" />
+          <Button Content="Summarize with Claude"
+                  IsVisible="{Binding CanSummarize}"
+                  Command="{Binding SummarizeCommand}" />
+          <Button Name="CloseButton" Content="Close" />
+          <SplitButton Classes="accent" Content="Copy" Command="{Binding CopyCommand}"
+                       ToolTip.Tip="Copy the recap (⏎); choose the format from the arrow">
+            <SplitButton.Resources>
+              <SolidColorBrush x:Key="SplitButtonBackground" Color="{DynamicResource SystemAccentColor}" />
+              <SolidColorBrush x:Key="SplitButtonBackgroundPointerOver" Color="{DynamicResource SystemAccentColorLight1}" />
+              <SolidColorBrush x:Key="SplitButtonBackgroundPressed" Color="{DynamicResource SystemAccentColorDark1}" />
+              <SolidColorBrush x:Key="SplitButtonBackgroundChecked" Color="{DynamicResource SystemAccentColor}" />
+              <SolidColorBrush x:Key="SplitButtonForeground" Color="White" />
+              <SolidColorBrush x:Key="SplitButtonForegroundPointerOver" Color="White" />
+              <SolidColorBrush x:Key="SplitButtonForegroundPressed" Color="White" />
+              <SolidColorBrush x:Key="SplitButtonBorderBrush" Color="Transparent" />
+              <SolidColorBrush x:Key="SplitButtonBorderBrushPointerOver" Color="Transparent" />
+              <SolidColorBrush x:Key="SplitButtonBorderBrushPressed" Color="Transparent" />
+              <SolidColorBrush x:Key="SplitButtonBorderBrushDivider" Color="#40FFFFFF" />
+            </SplitButton.Resources>
+            <SplitButton.Flyout>
+              <MenuFlyout Placement="TopEdgeAlignedRight">
+                <MenuItem Header="Copy as Markdown" ToggleType="Radio"
+                          IsChecked="{Binding IsMarkdownFormat, Mode=OneWay}"
+                          Command="{Binding CopyAsCommand}"
+                          CommandParameter="{x:Static daily:RecapTextFormat.Markdown}" />
+                <MenuItem Header="Copy for Slack" ToggleType="Radio"
+                          IsChecked="{Binding IsSlackFormat, Mode=OneWay}"
+                          Command="{Binding CopyAsCommand}"
+                          CommandParameter="{x:Static daily:RecapTextFormat.Slack}" />
+                <MenuItem Header="Copy as Plain Text" ToggleType="Radio"
+                          IsChecked="{Binding IsPlainTextFormat, Mode=OneWay}"
+                          Command="{Binding CopyAsCommand}"
+                          CommandParameter="{x:Static daily:RecapTextFormat.PlainText}" />
+              </MenuFlyout>
+            </SplitButton.Flyout>
+          </SplitButton>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+  </Grid>
+</Window>

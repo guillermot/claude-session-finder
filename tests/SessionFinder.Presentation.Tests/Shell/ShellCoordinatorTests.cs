@@ -92,6 +92,19 @@ public sealed class ShellCoordinatorTests
     }
 
     [Fact]
+    public void TrayRecap_TheMenuEntryIsPicked_AsksTheHeadForTheRecapWindow()
+    {
+        using var fixture = new Fixture(FakeGlobalHotkey.GrantingEverything());
+        fixture.Coordinator.Start();
+        var wasRequested = false;
+        fixture.Coordinator.RecapRequested += (_, _) => wasRequested = true;
+
+        fixture.Tray.RaiseRecapRequested();
+
+        wasRequested.Should().BeTrue();
+    }
+
+    [Fact]
     public void TrayRebuildIndex_TheMenuEntryIsPicked_ReadsEveryTranscriptAgain()
     {
         using var fixture = new Fixture(FakeGlobalHotkey.GrantingEverything());

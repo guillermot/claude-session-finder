@@ -86,6 +86,8 @@ internal static class Program
 
         application.InitializeComponent();
 
+        ThemePalette.Follow(application);
+
         return application;
     }
 

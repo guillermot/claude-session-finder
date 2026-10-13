@@ -67,5 +67,5 @@ public sealed class UpdateSettingsHandlerTests
     private static UpdateSettingsCommand Command(FinderSettings settings) => new() { Settings = settings };
 
     private static FinderSettings Defaults() =>
-        FinderSettings.From(new ShellOptions(), new SearchOptions(), new LogLevelOptions());
+        FinderSettings.From(new ShellOptions(), new SearchOptions(), new LogLevelOptions(), new RecapOptions());
 }

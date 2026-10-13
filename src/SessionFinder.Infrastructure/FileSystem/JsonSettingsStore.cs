@@ -48,6 +48,7 @@ public sealed class JsonSettingsStore(IApplicationPaths paths) : ISettingsStore
         ApplyShell(document, settings);
         ApplySearch(document, settings);
         ApplyLogLevel(document, settings);
+        ApplyRecap(document, settings);
 
         await ReplaceAsync(filePath, document, cancellationToken).ConfigureAwait(false);
     }
@@ -117,6 +118,16 @@ public sealed class JsonSettingsStore(IApplicationPaths paths) : ISettingsStore
         var level = settings.VerboseLogging ? LogLevelOptions.VerboseLevel : LogLevelOptions.NormalLevel;
 
         Set(document, $"{LogLevelOptions.SectionName}:{nameof(LogLevelOptions.Default)}", level);
+    }
+
+    private static void ApplyRecap(JsonObject document, FinderSettings settings)
+    {
+        var section = RecapOptions.SectionName;
+
+        Set(document, $"{section}:{nameof(RecapOptions.DayStartHour)}", settings.RecapDayStartHour);
+        Set(document, $"{section}:{nameof(RecapOptions.LookbackDays)}", settings.RecapLookbackDays);
+        Set(document, $"{section}:{nameof(RecapOptions.IncludeGit)}", settings.RecapIncludeGit);
+        Set(document, $"{section}:{nameof(RecapOptions.EnableAiSummary)}", settings.RecapAiSummary);
     }
 
     private static void Set<TValue>(JsonObject document, string path, TValue value) =>

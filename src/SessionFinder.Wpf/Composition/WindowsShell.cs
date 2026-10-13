@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using SessionFinder.Presentation.Abstractions;
+using SessionFinder.Presentation.Search;
 using SessionFinder.Presentation.Shell;
 using SessionFinder.Wpf.Platform;
 using SessionFinder.Wpf.Views;
@@ -34,6 +35,7 @@ internal sealed class WindowsShell : IDisposable
     private readonly SingleInstanceGate _gate;
 
     private SettingsWindow? _settingsWindow;
+    private RecapWindow? _recapWindow;
     private bool _isDisposed;
 
     private WindowsShell(
@@ -96,6 +98,8 @@ internal sealed class WindowsShell : IDisposable
         _gate.ShowRequested -= OnShowRequested;
         _coordinator.ExitRequested -= OnExitRequested;
         _coordinator.SettingsRequested -= OnSettingsRequested;
+        _coordinator.RecapRequested -= OnRecapRequested;
+        _services.GetRequiredService<SearchViewModel>().RecapRequested -= OnSearchRecapRequested;
 
         _autostart.Dispose();
         _coordinator.Dispose();
@@ -107,6 +111,8 @@ internal sealed class WindowsShell : IDisposable
     {
         _coordinator.ExitRequested += OnExitRequested;
         _coordinator.SettingsRequested += OnSettingsRequested;
+        _coordinator.RecapRequested += OnRecapRequested;
+        _services.GetRequiredService<SearchViewModel>().RecapRequested += OnSearchRecapRequested;
         _gate.ShowRequested += OnShowRequested;
 
         _coordinator.Start();
@@ -130,6 +136,31 @@ internal sealed class WindowsShell : IDisposable
 
         _settingsWindow = _services.GetRequiredService<SettingsWindow>();
         _settingsWindow.Show();
+    }
+
+    /// <summary>
+    /// The recap asked for from the search box. The box is topmost and hides when it loses focus,
+    /// so it is put away first rather than left to fight the recap window for the foreground.
+    /// </summary>
+    private void OnSearchRecapRequested(object? sender, EventArgs e)
+    {
+        _coordinator.HideSearch();
+        OnRecapRequested(sender, e);
+    }
+
+    /// <summary>
+    /// Shows the recap window, or brings the one already open back to the front.
+    /// </summary>
+    private void OnRecapRequested(object? sender, EventArgs e)
+    {
+        if (_recapWindow is { IsLoaded: true } existing)
+        {
+            existing.Activate();
+            return;
+        }
+
+        _recapWindow = _services.GetRequiredService<RecapWindow>();
+        _recapWindow.Show();
     }
 
     /// <summary>

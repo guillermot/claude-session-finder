@@ -65,6 +65,31 @@ public sealed record AppError
         Message = "No file manager was found to show the folder in.",
     };
 
+    /// <summary>There is no activity in the recap, so there is nothing for a summary to say.</summary>
+    public static AppError NothingToSummarize { get; } = new()
+    {
+        Code = nameof(NothingToSummarize),
+        Message = "There is no activity on this day to summarise.",
+    };
+
+    /// <summary>The <c>claude</c> command could not be found to write the summary with.</summary>
+    public static AppError SummarizerNotFound { get; } = new()
+    {
+        Code = nameof(SummarizerNotFound),
+        Message = "The claude command was not found. Install Claude Code, or set its path under Recap in the settings file.",
+    };
+
+    /// <summary>
+    /// Builds the failure for a summary the model was asked for and did not write.
+    /// </summary>
+    /// <param name="reason">Why, in the words of whatever refused.</param>
+    /// <returns>The error.</returns>
+    public static AppError SummaryFailed(string reason) => new()
+    {
+        Code = nameof(SummaryFailed),
+        Message = $"The summary could not be written: {reason}",
+    };
+
     /// <summary>
     /// Builds the failure for a command that could not be started at all.
     /// </summary>

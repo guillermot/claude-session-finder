@@ -35,6 +35,7 @@ public sealed class GetSettingsHandlerTests
         new FixedOptionsMonitor<ShellOptions>(shell),
         new FixedOptionsMonitor<SearchOptions>(new SearchOptions()),
         new FixedOptionsMonitor<LogLevelOptions>(new LogLevelOptions()),
+        new FixedOptionsMonitor<RecapOptions>(new RecapOptions()),
         new StubPaths());
 
     private sealed class StubPaths : IApplicationPaths

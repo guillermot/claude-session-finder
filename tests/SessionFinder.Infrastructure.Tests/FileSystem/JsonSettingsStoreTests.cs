@@ -59,6 +59,20 @@ public sealed class JsonSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveAsync_RecapSettingsWereChanged_BindBackOntoTheRecapOptions()
+    {
+        var settings = Defaults() with { RecapDayStartHour = 6, RecapLookbackDays = 2, RecapIncludeGit = false, RecapAiSummary = true };
+
+        await _store.SaveAsync(settings, CancellationToken.None);
+
+        var recap = Bind<RecapOptions>(RecapOptions.SectionName);
+        recap.DayStartHour.Should().Be(6);
+        recap.LookbackDays.Should().Be(2);
+        recap.IncludeGit.Should().BeFalse();
+        recap.EnableAiSummary.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task SaveAsync_WeightsWereTuned_BindBackOntoTheSearchOptions()
     {
         var settings = Defaults() with { ChunkWeights = new ChunkWeights(9, 8, 7, 6, 5) };
@@ -177,7 +191,7 @@ public sealed class JsonSettingsStoreTests : IDisposable
     }
 
     private static FinderSettings Defaults() =>
-        FinderSettings.From(new ShellOptions(), new SearchOptions(), new LogLevelOptions());
+        FinderSettings.From(new ShellOptions(), new SearchOptions(), new LogLevelOptions(), new RecapOptions());
 
     private sealed class StubPaths(string settingsFilePath) : IApplicationPaths
     {

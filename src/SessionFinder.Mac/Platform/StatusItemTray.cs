@@ -55,6 +55,9 @@ internal sealed class StatusItemTray : ITrayIcon, IDisposable
     public event EventHandler? SearchRequested;
 
     /// <inheritdoc />
+    public event EventHandler? RecapRequested;
+
+    /// <inheritdoc />
     public event EventHandler? RebuildIndexRequested;
 
     /// <inheritdoc />
@@ -108,6 +111,7 @@ internal sealed class StatusItemTray : ITrayIcon, IDisposable
                 _registeredChord,
                 new NativeMenuItemSeparator(),
                 Item("Search…", () => SearchRequested),
+                Item("Daily recap…", () => RecapRequested),
                 Item("Rebuild index", () => RebuildIndexRequested),
                 Item("Open settings", () => SettingsRequested),
                 Item("Open log folder", () => LogFolderRequested),

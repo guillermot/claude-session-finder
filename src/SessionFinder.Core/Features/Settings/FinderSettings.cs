@@ -25,6 +25,8 @@ public sealed record FinderSettings
     private const int SmallestUsefulResultCount = 1;
     private const int LargestUsefulResultCount = 200;
     private const double SmallestUsefulHalfLifeDays = 0.1;
+    private const int LatestUsefulDayStartHour = 12;
+    private const int LargestUsefulLookbackDays = 14;
 
     /// <summary>The chord that summons the search box, such as <c>Ctrl+Alt+Space</c>.</summary>
     public required string Hotkey { get; init; }
@@ -56,18 +58,36 @@ public sealed record FinderSettings
     /// <summary>Whether the log records more than the ordinary account of what happened.</summary>
     public required bool VerboseLogging { get; init; }
 
+    /// <summary>The local hour a working day starts at, for the daily recap.</summary>
+    public required int RecapDayStartHour { get; init; }
+
+    /// <summary>How many active days before the focus day the recap condenses.</summary>
+    public required int RecapLookbackDays { get; init; }
+
+    /// <summary>Whether the recap lists the user's own commits.</summary>
+    public required bool RecapIncludeGit { get; init; }
+
+    /// <summary>Whether the recap window offers to have Claude write the recap up.</summary>
+    public required bool RecapAiSummary { get; init; }
+
     /// <summary>
     /// Builds the settings from the bound options, filling in anything the user never set.
     /// </summary>
     /// <param name="shell">The bound shell options.</param>
     /// <param name="search">The bound search options.</param>
     /// <param name="logLevel">The bound logging level.</param>
+    /// <param name="recap">The bound daily recap options.</param>
     /// <returns>The settings as they currently apply.</returns>
-    public static FinderSettings From(ShellOptions shell, SearchOptions search, LogLevelOptions logLevel)
+    public static FinderSettings From(
+        ShellOptions shell,
+        SearchOptions search,
+        LogLevelOptions logLevel,
+        RecapOptions recap)
     {
         ArgumentNullException.ThrowIfNull(shell);
         ArgumentNullException.ThrowIfNull(search);
         ArgumentNullException.ThrowIfNull(logLevel);
+        ArgumentNullException.ThrowIfNull(recap);
 
         return new FinderSettings
         {
@@ -81,6 +101,10 @@ public sealed record FinderSettings
             RecencyHalfLifeDays = search.RecencyHalfLifeDays,
             ChunkWeights = search.ToChunkWeights(),
             VerboseLogging = logLevel.IsVerbose,
+            RecapDayStartHour = recap.DayStartHour,
+            RecapLookbackDays = recap.LookbackDays,
+            RecapIncludeGit = recap.IncludeGit,
+            RecapAiSummary = recap.EnableAiSummary,
         };
     }
 
@@ -111,6 +135,20 @@ public sealed record FinderSettings
             return Result.Failure(AppError.SettingRejected(
                 nameof(RecencyHalfLifeDays),
                 $"it must be at least {SmallestUsefulHalfLifeDays}"));
+        }
+
+        if (RecapDayStartHour is < 0 or > LatestUsefulDayStartHour)
+        {
+            return Result.Failure(AppError.SettingRejected(
+                nameof(RecapDayStartHour),
+                $"it must be between 0 and {LatestUsefulDayStartHour}"));
+        }
+
+        if (RecapLookbackDays is < 0 or > LargestUsefulLookbackDays)
+        {
+            return Result.Failure(AppError.SettingRejected(
+                nameof(RecapLookbackDays),
+                $"it must be between 0 and {LargestUsefulLookbackDays}"));
         }
 
         return ValidateWeights();

@@ -123,6 +123,7 @@ internal sealed partial class SearchWindow : Window, IAppWindow
         Key.Up when modifiers == KeyModifiers.None => MoveSelection(-SelectionStep),
         Key.Enter => Run(OpenShortcutFor(modifiers)),
         Key.C when modifiers.HasFlag(KeyModifiers.Meta) => Run(CopyShortcutFor(modifiers)),
+        Key.R when modifiers == KeyModifiers.Meta => Run(_viewModel.ShowRecapCommand),
         _ => false,
     };
 

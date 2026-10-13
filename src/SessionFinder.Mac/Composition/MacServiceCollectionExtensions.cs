@@ -53,6 +53,7 @@ internal static class MacServiceCollectionExtensions
         services.TryAddSingleton<IAppWindow>(provider => provider.GetRequiredService<SearchWindow>());
 
         services.TryAddTransient<SettingsWindow>();
+        services.TryAddTransient<RecapWindow>();
 
         return services;
     }

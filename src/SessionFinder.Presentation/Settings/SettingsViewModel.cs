@@ -85,6 +85,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private bool _verboseLogging;
 
     [ObservableProperty]
+    private int _recapDayStartHour;
+
+    [ObservableProperty]
+    private int _recapLookbackDays;
+
+    [ObservableProperty]
+    private bool _recapIncludeGit;
+
+    [ObservableProperty]
+    private bool _recapAiSummary;
+
+    [ObservableProperty]
     private string _settingsFilePath = string.Empty;
 
     [ObservableProperty]
@@ -154,6 +166,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         RecencyWeight = settings.RecencyWeight;
         RecencyHalfLifeDays = settings.RecencyHalfLifeDays;
         VerboseLogging = settings.VerboseLogging;
+        RecapDayStartHour = settings.RecapDayStartHour;
+        RecapLookbackDays = settings.RecapLookbackDays;
+        RecapIncludeGit = settings.RecapIncludeGit;
+        RecapAiSummary = settings.RecapAiSummary;
 
         LoadWeights(settings.ChunkWeights);
 
@@ -232,6 +248,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             UserPromptWeight,
             AssistantTextWeight),
         VerboseLogging = VerboseLogging,
+        RecapDayStartHour = RecapDayStartHour,
+        RecapLookbackDays = RecapLookbackDays,
+        RecapIncludeGit = RecapIncludeGit,
+        RecapAiSummary = RecapAiSummary,
     };
 
     private void OnRegistrationChanged(object? sender, EventArgs e) => RefreshRegisteredChord();

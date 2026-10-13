@@ -6,6 +6,8 @@ internal sealed class FakeTrayIcon : ITrayIcon
 {
     public event EventHandler? SearchRequested;
 
+    public event EventHandler? RecapRequested;
+
     public event EventHandler? RebuildIndexRequested;
 
     public event EventHandler? SettingsRequested;
@@ -23,6 +25,8 @@ internal sealed class FakeTrayIcon : ITrayIcon
     public void SetTooltip(string text) => Tooltip = text;
 
     public void RaiseSearchRequested() => SearchRequested?.Invoke(this, EventArgs.Empty);
+
+    public void RaiseRecapRequested() => RecapRequested?.Invoke(this, EventArgs.Empty);
 
     public void RaiseRebuildIndexRequested() => RebuildIndexRequested?.Invoke(this, EventArgs.Empty);
 

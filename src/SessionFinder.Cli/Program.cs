@@ -19,6 +19,7 @@ internal static class Program
     private const string SearchCommandName = "search";
     private const string WatchCommandName = "watch";
     private const string StatusCommandName = "status";
+    private const string RecapCommandName = "recap";
 
     private static async Task<int> Main(string[] args)
     {
@@ -63,6 +64,8 @@ internal static class Program
                 return await WatchCommand.RunAsync(arguments, cancellationToken).ConfigureAwait(false);
             case StatusCommandName:
                 return await StatusCommand.RunAsync(arguments, cancellationToken).ConfigureAwait(false);
+            case RecapCommandName:
+                return await RecapCommand.RunAsync(arguments, cancellationToken).ConfigureAwait(false);
             default:
                 WriteNotWiredYet(command);
                 return ExitNotImplemented;
