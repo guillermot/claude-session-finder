@@ -104,7 +104,6 @@ public sealed partial class ProjectCardViewModel : ObservableObject
 /// </summary>
 public sealed class SessionRowViewModel
 {
-    private const int DescriptionLength = 180;
 
     /// <summary>
     /// Builds a row.
@@ -124,7 +123,7 @@ public sealed class SessionRowViewModel
         ArgumentNullException.ThrowIfNull(session);
 
         Title = session.Title;
-        Description = Describe(session);
+        Description = SessionDescription.For(session);
         PromptCount = session.PromptCount;
         SessionId = session.SessionId;
         Folder = session.Folder;
@@ -139,8 +138,8 @@ public sealed class SessionRowViewModel
     public string Title { get; }
 
     /// <summary>
-    /// One or two lines under the title saying what the session came to: the assistant's last word
-    /// on it where that was read, which is the focus day, and the most substantial prompt otherwise.
+    /// A few lines under the title saying what the session achieved, written by
+    /// <see cref="SessionDescription"/>.
     /// </summary>
     public string? Description { get; }
 
@@ -176,22 +175,6 @@ public sealed class SessionRowViewModel
 
     /// <summary>Shows the session's folder in the file manager.</summary>
     public IAsyncRelayCommand RevealCommand { get; }
-
-    private static string? Describe(SessionRecap session)
-    {
-        var text = session.Outcome ?? session.KeyPrompts.FirstOrDefault();
-
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return null;
-        }
-
-        // The reply is Markdown, and a description is plain text: the marks would show as literal
-        // backticks and asterisks in the middle of a sentence.
-        var plain = PromptText.Collapse(text.Replace("**", string.Empty, StringComparison.Ordinal).Replace("`", string.Empty, StringComparison.Ordinal));
-
-        return PromptText.Truncate(plain, DescriptionLength);
-    }
 }
 
 /// <summary>

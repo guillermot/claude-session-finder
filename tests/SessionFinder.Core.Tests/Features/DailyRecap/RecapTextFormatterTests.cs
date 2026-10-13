@@ -18,7 +18,7 @@ public sealed class RecapTextFormatterTests
               - CI actions (5 prompts)
               - _plus 1 quick question_
               - Commits:
-                - `824d14a` Make path tests platform-neutral
+                - Make path tests platform-neutral
 
             **Earlier**
             - **Thu, Oct 1**
@@ -34,8 +34,9 @@ public sealed class RecapTextFormatterTests
 
         text.Should().StartWith("*Fri, Oct 2*\n• *finder* · `fix/paths`");
         text.Should().Contain("\n    ◦ Path tests (12 prompts)\n");
-        text.Should().Contain("\n        ▪ `824d14a` Make path tests platform-neutral\n");
+        text.Should().Contain("\n        ▪ Make path tests platform-neutral\n");
         text.Should().NotContain("**");
+        text.Should().NotContain("824d14a");
     }
 
     [Fact]
@@ -73,8 +74,8 @@ public sealed class RecapTextFormatterTests
               - Thu, Oct 1: Security policy
               - _plus 1 quick question_
               - Commits:
-                - `824d14a` Make path tests platform-neutral
-                - `41bc5b2` Add security policy
+                - Make path tests platform-neutral
+                - Add security policy
 
             """.ReplaceLineEndings("\n"));
     }

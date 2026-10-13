@@ -115,7 +115,7 @@ public static class RecapSummaryPrompt
 
             foreach (var commit in project.Commits)
             {
-                Line(builder, $"- Commit {commit.Sha}: {commit.Subject}");
+                Line(builder, $"- Commit: {commit.Subject}");
             }
         }
     }
@@ -132,7 +132,7 @@ public static class RecapSummaryPrompt
 
             foreach (var commit in project.Commits)
             {
-                Line(builder, $"  - Commit {commit.Sha}: {commit.Subject}");
+                Line(builder, $"  - Commit: {commit.Subject}");
             }
         }
     }

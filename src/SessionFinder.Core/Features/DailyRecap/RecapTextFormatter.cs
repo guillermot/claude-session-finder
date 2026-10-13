@@ -239,7 +239,7 @@ public static class RecapTextFormatter
 
         foreach (var commit in project.Commits)
         {
-            writer.Item(2, $"{markup.Code(commit.Sha)} {commit.Subject}");
+            writer.Item(2, commit.Subject);
         }
     }
 
@@ -291,7 +291,7 @@ public static class RecapTextFormatter
 
             foreach (var entry in project.Commits)
             {
-                writer.Item(2, $"{markup.Code(entry.Commit.Sha)} {entry.Commit.Subject}");
+                writer.Item(2, entry.Commit.Subject);
             }
         }
     }

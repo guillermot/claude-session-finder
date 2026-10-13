@@ -113,8 +113,8 @@
                                          Width="48" VerticalAlignment="Center" IsVisible="{Binding HasDayLabel}" />
                               <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Classes="body" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Classes="caption" Text="{Binding Description}" Margin="0,2,0,0"
-                                           MaxLines="2" TextTrimming="CharacterEllipsis"
+                                <TextBlock Classes="caption" Text="{Binding Description}" Margin="0,3,0,0"
+                                           MaxLines="4" TextTrimming="CharacterEllipsis" LineHeight="16"
                                            IsVisible="{Binding HasDescription}" />
                               </StackPanel>
                               <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding PromptCountText}"
@@ -155,8 +155,8 @@
                                            Width="48" VerticalAlignment="Center" IsVisible="{Binding HasDayLabel}" />
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                   <TextBlock Classes="secondary" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-                                  <TextBlock Classes="caption" Text="{Binding Description}" Margin="0,2,0,0"
-                                             MaxLines="1" TextTrimming="CharacterEllipsis"
+                                  <TextBlock Classes="caption" Text="{Binding Description}" Margin="0,3,0,0"
+                                             MaxLines="2" TextTrimming="CharacterEllipsis" LineHeight="16"
                                              IsVisible="{Binding HasDescription}" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding PromptCountText}"
@@ -190,13 +190,12 @@
                       <ItemsControl ItemsSource="{Binding Commits}" Margin="0,0,0,8" IsVisible="{Binding IsCommitsExpanded}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="recap:CommitRowViewModel">
-                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="14,4,14,4">
-                              <TextBlock Grid.Column="0" Classes="tertiary mono" Text="{Binding Sha}"
-                                         VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="14,4,14,4" ToolTip.Tip="{Binding Sha}">
+                              <TextBlock Grid.Column="0" Classes="tertiary" Text="•" Margin="0,0,8,0" VerticalAlignment="Top" />
                               <TextBlock Grid.Column="1" Classes="body" Text="{Binding Subject}"
-                                         VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                         VerticalAlignment="Center" TextWrapping="Wrap" />
                               <TextBlock Grid.Column="2" Classes="tertiary" Text="{Binding When}"
-                                         VerticalAlignment="Center" Margin="12,0,0,0" />
+                                         VerticalAlignment="Top" Margin="12,1,0,0" />
                             </Grid>
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>

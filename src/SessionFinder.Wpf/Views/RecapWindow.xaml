@@ -41,7 +41,7 @@
           <StackPanel Grid.Column="1" VerticalAlignment="Center">
             <TextBlock Style="{StaticResource BodyTextStyle}" Text="{Binding Title}" />
             <TextBlock Style="{StaticResource CaptionTextStyle}" Text="{Binding Description}" Margin="0,2,0,0"
-                       MaxHeight="34" TextTrimming="CharacterEllipsis"
+                       MaxHeight="68" TextTrimming="CharacterEllipsis"
                        Visibility="{Binding HasDescription, Converter={StaticResource BooleanToVisibility}}" />
           </StackPanel>
           <TextBlock Grid.Column="2" Style="{StaticResource TertiaryTextStyle}" Text="{Binding PromptCountText}"
@@ -161,9 +161,9 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                               </Grid.ColumnDefinitions>
-                              <TextBlock Grid.Column="0" Style="{StaticResource TertiaryTextStyle}" Text="{Binding Sha}"
-                                         FontFamily="{StaticResource MonospaceFont}" Margin="0,0,10,0" />
-                              <TextBlock Grid.Column="1" Style="{StaticResource BodyTextStyle}" Text="{Binding Subject}" />
+                              <TextBlock Grid.Column="0" Style="{StaticResource TertiaryTextStyle}" Text="•" Margin="0,0,8,0" VerticalAlignment="Top" />
+                              <TextBlock Grid.Column="1" Style="{StaticResource BodyTextStyle}" Text="{Binding Subject}"
+                                         TextWrapping="Wrap" TextTrimming="None" ToolTip="{Binding Sha}" />
                               <TextBlock Grid.Column="2" Style="{StaticResource TertiaryTextStyle}" Text="{Binding When}" Margin="12,0,0,0" />
                             </Grid>
                           </DataTemplate>
